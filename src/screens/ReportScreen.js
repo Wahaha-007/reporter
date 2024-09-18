@@ -1,15 +1,26 @@
-// 1. ส่วนหัวใส่พื้นฐาน Library ที่ใช้ใน GUI ทั่วๆ ไป
+// Date : 18 Sep 24
+// Purpose : หน้า  Report ปัญหาเข้า Center คล้ายๆ Traffy Fondu
 import React, { useState, useEffect, useContext } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
 import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
+import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 
 import { View, Text, TextInput, TouchableOpacity, Button, Image, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { styles } from '../styles/theme';
 
 const departments = ['HR', 'Facility', 'Production', 'Maintenance', 'Finance', 'QA'];
+const departmentsIcons = {
+	HR: 'people',
+	Facility: 'build',
+	Production: 'factory',
+	Maintenance: 'build-circle',
+	Finance: 'attach-money',
+	QA: 'check-circle',
+};
 
 export default function ReportScreen() {
 	const isFocused = useIsFocused();
@@ -23,9 +34,11 @@ export default function ReportScreen() {
 	const [name, setName] = useState('');
 	const [topic, setTopic] = useState('');
 	const [details, setDetails] = useState('');
-	const [selectedDepartment, setSelectedDepartment] = useState(departments[0]);
 	const [image, setImage] = useState(null);
+
 	const [currentDeptIndex, setCurrentDeptIndex] = useState(0);
+	const selectedDepartment = departments[currentDeptIndex];
+
 	const [location, setLocation] = useState(null);
 	const [region, setRegion] = useState({
 		latitude: 37.78825,
@@ -61,16 +74,25 @@ export default function ReportScreen() {
 		}
 	};
 
-	const handleSwipeLeft = () => {
-		const nextIndex = (currentDeptIndex + 1) % departments.length;
-		setCurrentDeptIndex(nextIndex);
-		setSelectedDepartment(departments[nextIndex]);
+	const handleSwipe = (direction) => {
+		if (direction === 'left') {
+			const nextIndex = (currentDeptIndex + 1) % departments.length;
+			setCurrentDeptIndex(nextIndex);
+		} else if (direction === 'right') {
+			const prevIndex = (currentDeptIndex - 1 + departments.length) % departments.length;
+			setCurrentDeptIndex(prevIndex);
+		}
 	};
 
-	const handleSwipeRight = () => {
-		const nextIndex = (currentDeptIndex - 1 + departments.length) % departments.length;
-		setCurrentDeptIndex(nextIndex);
-		setSelectedDepartment(departments[nextIndex]);
+	const onHandlerStateChange = (event) => {
+		if (event.nativeEvent.state === State.END) {
+			const { translationX } = event.nativeEvent;
+			if (translationX < -50) {
+				handleSwipe('left');
+			} else if (translationX > 50) {
+				handleSwipe('right');
+			}
+		}
 	};
 
 	const getLocation = async () => {
@@ -114,145 +136,82 @@ export default function ReportScreen() {
 	};
 
 	return (
-		<ScrollView style={styles.container}>
+		<GestureHandlerRootView style={styles.rootView}>
+			<ScrollView style={styles.container}>
 
-			<Text style={styles.label}>Name (Optional):</Text>
-			<View style={styles.inputContainer}>
-				<TextInput
-					style={styles.input}
-					placeholder="Enter your name (default: Anonymous)"
-					placeholderTextColor="#999"
-					value={name}
-					onChangeText={setName}
-				/>
-			</View>
-
-			<Text style={styles.label}>Topic:</Text>
-			<View style={styles.inputContainer}>
-				<TextInput
-					style={styles.input}
-					placeholder="Enter topic"
-					placeholderTextColor="#999"
-					value={topic}
-					onChangeText={setTopic}
-				/>
-				<TouchableOpacity>
-					<Icon name="mic" size={24} color="white" />
-				</TouchableOpacity>
-			</View>
-
-			<Text style={styles.label}>Picture:</Text>
-			<View style={styles.imageContainer}>
-				{image && <Image source={{ uri: image }} style={styles.image} />}
-				<View style={styles.buttonContainer}>
-					<Button title="Take Photo" onPress={takePhoto} color="#444" />
-					<Button title="Pick from Library" onPress={pickImage} color="#444" />
-					{image && <Button title="Retake / Reselect" onPress={pickImage} color="#444" />}
+				<Text style={styles.label}>Name (Optional):</Text>
+				<View style={styles.inputContainer}>
+					<TextInput
+						style={styles.input}
+						placeholder="Enter your name (default: Anonymous)"
+						placeholderTextColor="#999"
+						value={name}
+						onChangeText={setName}
+					/>
 				</View>
-			</View>
 
-			<Text style={styles.label}>Details:</Text>
-			<View style={styles.inputContainer}>
-				<TextInput
-					style={styles.input}
-					placeholder="Enter details"
-					placeholderTextColor="#999"
-					value={details}
-					onChangeText={setDetails}
-					multiline
-				/>
-				<TouchableOpacity>
-					<Icon name="mic" size={24} color="white" />
+				<Text style={styles.label}>Topic:</Text>
+				<View style={styles.inputContainer}>
+					<TextInput
+						style={styles.input}
+						placeholder="Enter topic"
+						placeholderTextColor="#999"
+						value={topic}
+						onChangeText={setTopic}
+					/>
+					<TouchableOpacity>
+						<Icon name="mic" size={24} color="white" />
+					</TouchableOpacity>
+				</View>
+
+				<Text style={styles.label}>Picture:</Text>
+				<View style={styles.imageContainer}>
+					{image && <Image source={{ uri: image }} style={styles.image} />}
+					<View style={styles.buttonContainer}>
+						<Button title="Take Photo" onPress={takePhoto} color="#444" />
+						<Button title="Pick from Library" onPress={pickImage} color="#444" />
+						{image && <Button title="Retake / Reselect" onPress={pickImage} color="#444" />}
+					</View>
+				</View>
+
+				<Text style={styles.label}>Details:</Text>
+				<View style={styles.inputContainer}>
+					<TextInput
+						style={styles.input}
+						placeholder="Enter details"
+						placeholderTextColor="#999"
+						value={details}
+						onChangeText={setDetails}
+						multiline
+					/>
+					<TouchableOpacity>
+						<Icon name="mic" size={24} color="white" />
+					</TouchableOpacity>
+				</View>
+
+				<Text style={styles.label}>Location:</Text>
+				<MapView
+					style={styles.map}
+					region={region}
+					onPress={(e) => setLocation(e.nativeEvent.coordinate)}
+				>
+					{location && <Marker coordinate={location} />}
+				</MapView>
+				<Button title="Get Current Location" onPress={getLocation} color="#444" />
+
+				<Text style={styles.label}>Responsible Department:</Text>
+				<PanGestureHandler onHandlerStateChange={onHandlerStateChange}>
+					<View style={styles.departmentContainer}>
+						<Icon name={departmentsIcons[selectedDepartment]} size={80} color="white" />
+						<Text style={styles.departmentText}>{selectedDepartment}</Text>
+					</View>
+				</PanGestureHandler>
+
+				<TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+					<Text style={styles.submitButtonText}>Submit</Text>
 				</TouchableOpacity>
-			</View>
-
-			<Text style={styles.label}>Location:</Text>
-			<MapView
-				style={styles.map}
-				region={region}
-				onPress={(e) => setLocation(e.nativeEvent.coordinate)}
-			>
-				{location && <Marker coordinate={location} />}
-			</MapView>
-			<Button title="Get Current Location" onPress={getLocation} color="#444" />
-
-			<Text style={styles.label}>Responsible Department:</Text>
-			<View style={styles.departmentContainer}>
-				<TouchableOpacity onPress={handleSwipeRight}>
-					<Icon name="arrow-left" size={30} color="white" />
-				</TouchableOpacity>
-				<Text style={styles.departmentText}>{selectedDepartment}</Text>
-				<TouchableOpacity onPress={handleSwipeLeft}>
-					<Icon name="arrow-right" size={30} color="white" />
-				</TouchableOpacity>
-			</View>
-
-			<TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-				<Text style={styles.submitButtonText}>Submit</Text>
-			</TouchableOpacity>
-		</ScrollView>
+			</ScrollView>
+		</GestureHandlerRootView>
 	);
 };
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#000',
-		padding: 20,
-	},
-	label: {
-		color: 'white',
-		fontSize: 18,
-		marginBottom: 10,
-	},
-	inputContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: '#333',
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-		borderRadius: 5,
-		marginBottom: 20,
-	},
-	input: {
-		flex: 1,
-		color: 'white',
-	},
-	imageContainer: {
-		alignItems: 'center',
-		marginBottom: 20,
-	},
-	image: {
-		width: 200,
-		height: 150,
-		marginBottom: 10,
-	},
-	buttonContainer: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-	},
-	map: {
-		height: 200,
-		marginBottom: 20,
-	},
-	departmentContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		marginBottom: 30,
-	},
-	departmentText: {
-		color: 'white',
-		fontSize: 24,
-	},
-	submitButton: {
-		backgroundColor: '#444',
-		paddingVertical: 15,
-		borderRadius: 5,
-		alignItems: 'center',
-	},
-	submitButtonText: {
-		color: 'white',
-		fontSize: 18,
-	},
-});

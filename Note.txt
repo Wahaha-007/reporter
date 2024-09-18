@@ -11,6 +11,9 @@ npx expo install @react-navigation/bottom-tabs
 npx expo install expo-location
 npx expo install react-native-maps
 npx expo install react-native-gesture-handler
+npx expo install aws-amplify
+
+
 
 I want to develop the apps in ReactNative (with Expo) that has 2 screens.
 Make Just the first screen 'ReportScreen' for me with the following specs.
@@ -34,3 +37,13 @@ After user press submit ,just clear data in this page and navigate user to "Stat
 Just answer the related code and tell me where to change.  
 For the responsible Department, I want it the show the big Icon of each department and the name below. 
 Also, can we make it so that use can really swipe left/right to change the selection ?
+
+Tell me the detailed step to implement AWS backend for the RepostScreen (in ReactNative + Expo).
+
+1. Set Up AWS (DynamoDB + S3) in AWS Console
+
+s3 : report-images-bucket-20240919
+DynamoDB : Reports, Partition key : report_id
+
+2. Add into the React Code
+

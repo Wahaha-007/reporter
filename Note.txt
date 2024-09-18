@@ -1,0 +1,22 @@
+$ npx create-expo-app --template blank reporter
+$ git remote add origin git@github.com:Wahaha-007/reporter.git
+$ git branch -M main
+$ git push --set-upstream origin main
+
+
+npx expo install expo-image-picker
+npx expo install react-native-vector-icons
+npx expo install @react-navigation/native
+npx expo install @react-navigation/bottom-tabs
+
+I want to develop the apps in ReactNative (with Expo) that has 2 screens.
+Make Just the first screen 'ReportScreen' for me with the following specs.
+1. Black theme
+2. It is like a form that let user fill in the report. Copmpose of 
+  - Topic : User type input, there is also a small microphone icon for sound input ( will implement logic later)
+  - Picture : There is button, if user press it will let user take photo / get image from library. There is also retake/reselect photo option. Use 'Expo ImagePicker'.
+  - Details : let user fill in the details, again there is microphone icon
+  - Reponsible department : User can swipe left / right to select the icon of responsible department.
+    You can mock the icon like 'HR','Facility','Production','Maintenance','Finance','QA'. Using icon from 'react-native-vector-icons/MaterialIcons' 
+  - The submit button.
+3. Afer user press submit button, make the mock function that just console.log all input data above.

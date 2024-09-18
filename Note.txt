@@ -8,6 +8,9 @@ npx expo install expo-image-picker
 npx expo install react-native-vector-icons
 npx expo install @react-navigation/native
 npx expo install @react-navigation/bottom-tabs
+npx expo install expo-location
+npx expo install react-native-maps
+npx expo install react-native-gesture-handler
 
 I want to develop the apps in ReactNative (with Expo) that has 2 screens.
 Make Just the first screen 'ReportScreen' for me with the following specs.
@@ -20,3 +23,14 @@ Make Just the first screen 'ReportScreen' for me with the following specs.
     You can mock the icon like 'HR','Facility','Production','Maintenance','Finance','QA'. Using icon from 'react-native-vector-icons/MaterialIcons' 
   - The submit button.
 3. Afer user press submit button, make the mock function that just console.log all input data above.
+
+
+
+I think we should add the location so that the user can pick the location on the map and then also send that location data 
+with other information. Also, use can add his/her name but if not add , just make the default to anonymous.
+After user press submit ,just clear data in this page and navigate user to "Status" page.
+
+
+Just answer the related code and tell me where to change.  
+For the responsible Department, I want it the show the big Icon of each department and the name below. 
+Also, can we make it so that use can really swipe left/right to change the selection ?

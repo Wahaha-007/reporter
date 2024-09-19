@@ -1,7 +1,5 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-Note.txt
-
 # dependencies
 node_modules/
 
@@ -9,6 +7,8 @@ node_modules/
 .expo/
 dist/
 web-build/
+
+/src/services/.env
 
 # Native
 *.orig.*
@@ -35,3 +35,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Additional
+Note.txt

@@ -1,16 +1,26 @@
 // Date : 18 Sep 24
 // Purpose : หน้า  Report ปัญหาเข้า Center คล้ายๆ Traffy Fondu
+
 import React, { useState, useEffect, useContext } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
 import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { styles } from '../styles/theme';
 
 import { View, Text, TextInput, TouchableOpacity, Button, Image, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { styles } from '../styles/theme';
+import uuid from 'react-native-uuid';
+
+import { Storage } from 'aws-amplify'; // S3 for image uploads
+import { API } from 'aws-amplify';    // DynamoDB for data storage
+import Amplify from 'aws-amplify';
+import awsconfig from '../services/aws-exports';  // Import your AWS config
+
+// Configure Amplify with AWS settings
+Amplify.configure(awsconfig);
 
 const departments = ['HR', 'Facility', 'Production', 'Maintenance', 'Finance', 'QA'];
 const departmentsIcons = {
@@ -35,6 +45,7 @@ export default function ReportScreen() {
 	const [topic, setTopic] = useState('');
 	const [details, setDetails] = useState('');
 	const [image, setImage] = useState(null);
+	const [imageUrl, setImageUrl] = useState('');
 
 	const [currentDeptIndex, setCurrentDeptIndex] = useState(0);
 	const selectedDepartment = departments[currentDeptIndex];
@@ -48,6 +59,24 @@ export default function ReportScreen() {
 	});
 
 	const navigation = useNavigation();
+
+	const uploadImageToS3 = async (fileUri) => {
+		try {
+			const imageName = `${uuid.v4()}.jpg`; // Generate a unique file name
+			const response = await fetch(fileUri); // อ่าน file เข้ามา
+			const blob = await response.blob(); // ทำ image file ให้เป็น Blob
+
+			await Storage.put(imageName, blob, {
+				contentType: 'image/jpeg',
+			});
+
+			const url = await Storage.get(imageName);  // อ่าน Image URL, เหมือนการ confirm ว่า Write OK ด้วย
+			setImageUrl(url);
+			return url;
+		} catch (error) {
+			console.error('Error uploading image: ', error);
+		}
+	};
 
 	const pickImage = async () => {
 		let result = await ImagePicker.launchImageLibraryAsync({
@@ -112,27 +141,44 @@ export default function ReportScreen() {
 		setLocation(location.coords);
 	};
 
-	const handleSubmit = () => {
-		const reportData = {
-			name: name || 'Anonymous',
-			topic,
-			details,
-			selectedDepartment,
-			image,
-			location,
-		};
-		console.log(reportData);
+	const handleSubmit = async () => {
 
-		// Clear the form data
-		setName('');
-		setTopic('');
-		setDetails('');
-		setImage(null);
-		setLocation(null);
-		setCurrentDeptIndex(0);
+		try {
+			// Upload the image to S3 first
+			const uploadedImageUrl = await uploadImageToS3(image);
 
-		// Navigate to the "Status" page
-		navigation.navigate('Status');
+			// Prepare the report data to store in DynamoDB
+			const reportData = {
+				report_id: uuid.v4(),
+				name: name || 'Anonymous',
+				topic,
+				details,
+				selectedDepartment,
+				image_url: uploadedImageUrl,
+				location,
+			};
+
+			// 1. Write to AWS Backend
+			// Store data in DynamoDB
+			await API.post('DynamoDBReports', '/Reports', {
+				body: reportData,
+			});
+
+			console.log('Report submitted:', reportData);
+
+			// 2. Clear the form data
+			setName('');
+			setTopic('');
+			setDetails('');
+			setImage(null);
+			setLocation(null);
+			setCurrentDeptIndex(0);
+
+			// Navigate to the "Status" page
+			navigation.navigate('Status');
+		} catch (error) {
+			console.error('Error submitting report:', error);
+		}
 	};
 
 	return (

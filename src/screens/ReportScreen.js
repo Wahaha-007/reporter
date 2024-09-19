@@ -14,13 +14,8 @@ import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import uuid from 'react-native-uuid';
 
-import { Storage } from 'aws-amplify'; // S3 for image uploads
-import { API } from 'aws-amplify';    // DynamoDB for data storage
-import Amplify from 'aws-amplify';
-import awsconfig from '../services/aws-exports';  // Import your AWS config
-
-// Configure Amplify with AWS settings
-Amplify.configure(awsconfig);
+import AWS from 'aws-sdk';
+import Constants from 'expo-constants';
 
 const departments = ['HR', 'Facility', 'Production', 'Maintenance', 'Finance', 'QA'];
 const departmentsIcons = {
@@ -45,7 +40,6 @@ export default function ReportScreen() {
 	const [topic, setTopic] = useState('');
 	const [details, setDetails] = useState('');
 	const [image, setImage] = useState(null);
-	const [imageUrl, setImageUrl] = useState('');
 
 	const [currentDeptIndex, setCurrentDeptIndex] = useState(0);
 	const selectedDepartment = departments[currentDeptIndex];
@@ -60,23 +54,15 @@ export default function ReportScreen() {
 
 	const navigation = useNavigation();
 
-	const uploadImageToS3 = async (fileUri) => {
-		try {
-			const imageName = `${uuid.v4()}.jpg`; // Generate a unique file name
-			const response = await fetch(fileUri); // อ่าน file เข้ามา
-			const blob = await response.blob(); // ทำ image file ให้เป็น Blob
+	// Configure AWS SDK
+	AWS.config.update({
+		accessKeyId: Constants.expoConfig.extra.AWS_ACCESS_KEY,
+		secretAccessKey: Constants.expoConfig.extra.AWS_SECRET_KEY,
+		region: Constants.expoConfig.extra.AWS_REGION
+	});
 
-			await Storage.put(imageName, blob, {
-				contentType: 'image/jpeg',
-			});
-
-			const url = await Storage.get(imageName);  // อ่าน Image URL, เหมือนการ confirm ว่า Write OK ด้วย
-			setImageUrl(url);
-			return url;
-		} catch (error) {
-			console.error('Error uploading image: ', error);
-		}
-	};
+	const s3 = new AWS.S3();
+	const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 	const pickImage = async () => {
 		let result = await ImagePicker.launchImageLibraryAsync({
@@ -141,43 +127,72 @@ export default function ReportScreen() {
 		setLocation(location.coords);
 	};
 
+	const uploadImageToS3 = async () => {
+		try {
+			const imageName = `${uuid.v4()}.jpg`; // Generate a unique file name
+			const response = await fetch(image); // อ่าน file เข้ามา
+			const blob = await response.blob(); // ทำ image file ให้เป็น Blob
+
+			const uploadParams = {
+				Bucket: Constants.expoConfig.extra.BUCKET_NAME,
+				Key: imageName, // Filename
+				Body: blob,
+				ContentType: 'image/jpeg',
+			};
+
+			return s3.upload(uploadParams).promise();
+		} catch (error) {
+			console.error('Error uploading image: ', error);
+		}
+	};
+
+	const clearData = () => {
+		setName('');
+		setTopic('');
+		setDetails('');
+		setImage(null);
+		setLocation(null);
+		setCurrentDeptIndex(0);
+	};
+
 	const handleSubmit = async () => {
 
 		try {
 			// Upload the image to S3 first
-			const uploadedImageUrl = await uploadImageToS3(image);
-
-			// Prepare the report data to store in DynamoDB
-			const reportData = {
-				report_id: uuid.v4(),
-				name: name || 'Anonymous',
-				topic,
-				details,
-				selectedDepartment,
-				image_url: uploadedImageUrl,
-				location,
-			};
+			let imageUrl = null;
+			if (image) {
+				const s3Response = await uploadImageToS3();
+				imageUrl = s3Response.Location; // S3 image URL
+			}
 
 			// 1. Write to AWS Backend
-			// Store data in DynamoDB
-			await API.post('DynamoDBReports', '/Reports', {
-				body: reportData,
-			});
+			// Prepare DynamoDB entry
+			const params = {
+				TableName: 'Reports', // No need that high security
+				Item: {
+					report_id: uuid.v4(),
+					name: name || 'Anonymous',
+					topic,
+					details,
+					selectedDepartment,
+					location,
+					imageUrl,
+				},
+			};
 
-			console.log('Report submitted:', reportData);
+			// Store in DynamoDB
+			await dynamoDb.put(params).promise();
+
+			console.log('Report submitted:', params);
 
 			// 2. Clear the form data
-			setName('');
-			setTopic('');
-			setDetails('');
-			setImage(null);
-			setLocation(null);
-			setCurrentDeptIndex(0);
+			clearData();
 
 			// Navigate to the "Status" page
 			navigation.navigate('Status');
 		} catch (error) {
 			console.error('Error submitting report:', error);
+			Alert.alert('Error', 'Failed to submit report.');
 		}
 	};
 
@@ -194,6 +209,9 @@ export default function ReportScreen() {
 						value={name}
 						onChangeText={setName}
 					/>
+					<TouchableOpacity>
+						<Icon name="mic" size={24} color="white" />
+					</TouchableOpacity>
 				</View>
 
 				<Text style={styles.label}>Topic:</Text>
@@ -208,16 +226,6 @@ export default function ReportScreen() {
 					<TouchableOpacity>
 						<Icon name="mic" size={24} color="white" />
 					</TouchableOpacity>
-				</View>
-
-				<Text style={styles.label}>Picture:</Text>
-				<View style={styles.imageContainer}>
-					{image && <Image source={{ uri: image }} style={styles.image} />}
-					<View style={styles.buttonContainer}>
-						<Button title="Take Photo" onPress={takePhoto} color="#444" />
-						<Button title="Pick from Library" onPress={pickImage} color="#444" />
-						{image && <Button title="Retake / Reselect" onPress={pickImage} color="#444" />}
-					</View>
 				</View>
 
 				<Text style={styles.label}>Details:</Text>
@@ -244,6 +252,16 @@ export default function ReportScreen() {
 					{location && <Marker coordinate={location} />}
 				</MapView>
 				<Button title="Get Current Location" onPress={getLocation} color="#444" />
+
+				<Text style={styles.label}>Picture:</Text>
+				<View style={styles.imageContainer}>
+					{image && <Image source={{ uri: image }} style={styles.image} />}
+					<View style={styles.buttonContainer}>
+						<Button title="Take Photo" onPress={takePhoto} color="#444" />
+						<Button title="Pick from Library" onPress={pickImage} color="#444" />
+						{image && <Button title="Retake / Reselect" onPress={pickImage} color="#444" />}
+					</View>
+				</View>
 
 				<Text style={styles.label}>Responsible Department:</Text>
 				<PanGestureHandler onHandlerStateChange={onHandlerStateChange}>

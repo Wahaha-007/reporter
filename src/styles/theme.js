@@ -1,10 +1,11 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
+	// ---------- For Report Page
 	container: {
 		flex: 1,
 		backgroundColor: '#000',
-		padding: 20,
+		padding: 5,
 	},
 	label: {
 		color: 'white',
@@ -41,13 +42,17 @@ export const styles = StyleSheet.create({
 		height: 200,
 		marginBottom: 20,
 	},
-	departmentContainer: {
-		alignItems: 'center',
-		marginBottom: 30,
+	pagerView: {
+		height: 150,
+		marginVertical: 20,
 	},
-	departmentText: {
-		color: 'white',
-		fontSize: 24,
+	page: {
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	departmentName: {
+		color: '#fff',
+		fontSize: 18,
 		marginTop: 10,
 	},
 	submitButton: {
@@ -68,5 +73,51 @@ export const styles = StyleSheet.create({
 	tabBarStyle: {
 		backgroundColor: '#222', // Black theme for tab bar
 		borderTopWidth: 0,
+	},
+	// -------- For Status Page
+	card: {
+		backgroundColor: '#1c1c1e',
+		borderRadius: 10,
+	},
+	topic: {
+		fontSize: 20,
+		color: '#fff',
+		marginBottom: 10,
+	},
+	details: {
+		fontSize: 16,
+		color: '#ccc',
+		marginBottom: 10,
+	},
+	date: {
+		fontSize: 14,
+		color: '#777',
+		marginBottom: 10,
+	},
+	statusSection: {
+		marginBottom: 10,
+	},
+	statusContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+	},
+	statusItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginRight: 10,
+	},
+	statusText: {
+		fontSize: 14,
+		color: '#ccc',
+		marginLeft: 5,
+	},
+	statusLabel: {
+		fontSize: 16,
+		color: '#fff',
+		marginBottom: 5,
+	},
+	viewButton: {
+		backgroundColor: '#007AFF',
+		marginTop: 10,
 	},
 });

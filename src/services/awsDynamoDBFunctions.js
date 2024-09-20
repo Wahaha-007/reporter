@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk';
 import Constants from 'expo-constants';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 
 // ---------------- 1. AWS Infra related code --------------------//
 AWS.config.update({
@@ -33,22 +33,23 @@ export const getReportDetails = async (report_id) => {
 // Function to update a report in DynamoDB and optionally update the image in S3
 export const updateReport = async (report_id, updatedData) => {
 	// First, fetch the report to check if there's an existing image
+	console.log("Function called");
 	const reportParams = {
 		TableName: 'Reports',
 		Key: { report_id },
 	};
 
 	try {
-		const reportData = await dynamoDb.get(reportParams).promise();
+		const reportData = await dynamoDb.get(reportParams).promise(); // อ่าน Record เก่ามาดูก่อน
 		const report = reportData.Item;
 
 		let newImageUrl = report.imageUrl;
 
-		// If a new image is provided, handle S3 image update
+		// 1. ก่อนอื่นต้องจัดการเรื่อง file ใน s3 ก่อน ถ้ามีรูปใหม่ให้ลบรูปเก่าทิ้ง แล้ว Upload รูปใหม่ก่อน
 		if (updatedData.newImage) {
-			const newImage = updatedData.newImage;  // Assume this is the image data (file or base64)
+			const newImage = updatedData.newImage;  // This is image URI
 
-			// Delete old image from S3 if exists
+			// 1.1 Delete old image from S3 if exists
 			if (report?.imageUrl) {
 				const oldImageKey = report.imageUrl.split('/').pop();
 				const s3DeleteParams = {
@@ -59,36 +60,37 @@ export const updateReport = async (report_id, updatedData) => {
 				console.log(`Old image ${oldImageKey} deleted from S3.`);
 			}
 
-			// Upload new image to S3
+			// 1.2 Upload new image to S3
 			const imageKey = `${uuid.v4()}.jpg`; // You can generate a more complex key based on your logic
+			const response = await fetch(newImage);
+			const blob = await response.blob();
+
 			const s3UploadParams = {
 				Bucket: Constants.expoConfig.extra.BUCKET_NAME, // Replace with your S3 bucket name
 				Key: imageKey,
-				Body: newImage, // Assume this is the image file or base64 converted to binary
-				ContentType: 'image/jpeg', // Set correct MIME type
+				Body: blob,
+				ContentType: 'image/jpeg',
 			};
 			const uploadResponse = await s3.upload(s3UploadParams).promise();
 			newImageUrl = uploadResponse.Location;
 			console.log(`New image uploaded to S3 at ${newImageUrl}`);
 		}
 
-		// Update the report in DynamoDB
+		// 2. Update the report in DynamoDB
 		const updateParams = {
 			TableName: 'Reports',
 			Key: { report_id },
-			UpdateExpression: `SET #topic = :topic, details = :details, department = :department, location = :location, status = :status, imageUrl = :imageUrl, actionNote = :actionNote, actionDate = :actionDate`,
-			ExpressionAttributeNames: {
+			UpdateExpression: `SET #topic = :topic, details = :details, department = :department, #location = :location, imageUrl = :imageUrl`,
+			ExpressionAttributeNames: { // เอาไว้ใส่นิยามเพื่อหลบ reserved word collision
 				'#topic': 'topic',
+				'#location': 'location',
 			},
 			ExpressionAttributeValues: {
 				':topic': updatedData.topic,
 				':details': updatedData.details,
 				':department': updatedData.department,
 				':location': updatedData.location,
-				':status': updatedData.status || 'submit', // Default to 'submit' if not provided
 				':imageUrl': newImageUrl, // Use the new or existing image URL
-				':actionNote': updatedData.actionNote || '',
-				':actionDate': updatedData.actionDate || new Date().toISOString(),
 			},
 			ReturnValues: 'ALL_NEW', // Return the updated item
 		};
@@ -106,6 +108,7 @@ export const updateReport = async (report_id, updatedData) => {
 // Function to delete a report and its related photo from S3
 export const deleteReport = async (report_id) => {
 	// First, fetch the report to get the image URL (if any)
+	console.log("Function delete report called.");
 	const reportParams = {
 		TableName: 'Reports',
 		Key: {

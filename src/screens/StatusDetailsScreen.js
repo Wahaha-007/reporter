@@ -1,5 +1,5 @@
-// Date : 18 Sep 24
-// Purpose : หน้า  Report ปัญหาเข้า Center คล้ายๆ Traffy Fondu
+// Date : 20 Sep 24
+// Purpose : หน้าที่ Copy มาจากหน้า  Report ปัญหาหลักแต่ว่ามี Pre-populate Data
 
 import React, { useState, useEffect, useContext } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
@@ -12,11 +12,11 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import uuid from 'react-native-uuid';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import PagerView from 'react-native-pager-view';
 
 import AWS from 'aws-sdk';
 import Constants from 'expo-constants';
+import { deleteReport, updateReport, getReportDetails } from '../services/awsDynamoDBFunctions';
 
 const departments = [
 	{ name: 'HR', icon: 'people' },
@@ -31,12 +31,11 @@ export default function StatusDetailsScreenScreen({ route }) {
 	const isFocused = useIsFocused();
 	const { globalParams, setGlobalParams } = useGlobalContext();
 
-	const { report } = route.params;
+	const { report } = route.params; // ตัวแปรหลักที่ส่งมาจากหน้าก่อน
 	const [topic, setTopic] = useState(report.topic);
 	const [details, setDetails] = useState(report.details);
 	const [image, setImage] = useState(report.imageUrl);
-	const [localImageUri, setLocalImageUri] = useState(null);
-	const [isDownloading, setIsDownloading] = useState(false);
+	const [hasNewImage, setHasNewImage] = useState(false);
 
 	const [departmentIndex, setDepartmentIndex] = useState(
 		departments.findIndex((d) => d.name === report.department)
@@ -52,11 +51,28 @@ export default function StatusDetailsScreenScreen({ route }) {
 
 	const navigation = useNavigation();
 
-	useEffect(() => { // ต้องแก้ใหม่นระ ตอนนี้เอาแบบนี้ไปก่อน
-		if (report.imageUrl) {
-			generatePresignedUrl();
-		}
+	useEffect(() => {
+
+		generatePresignedUrl();
+		setHasNewImage(false);
+
 	}, [report.imageUrl]);
+
+	const generatePresignedUrl = () => {
+		if (report.imageUrl) { // ตรวจดูก่อนว่าไม่ได้ว่างเปล่า
+			const ImageKey = report.imageUrl.split('/').pop();
+			const params = {
+				Bucket: Constants.expoConfig.extra.BUCKET_NAME,
+				Key: ImageKey,
+				Expires: 60 // URL valid for 60 seconds
+			};
+			const ps_url = s3.getSignedUrl('getObject', params);
+			setImage(ps_url);
+		}
+	};
+
+	// ณ ตอนนี้เรามี Prefilled Data พร้อมแสดงผลให้ User ดูแล้ว, 
+	// ต่อไปจะเป็น Function ที่ใช้ป้อนค่าใหม่ เหมือนในหน้า Report
 
 	// ---------------- 1. AWS Infra related code --------------------//
 	AWS.config.update({
@@ -79,6 +95,7 @@ export default function StatusDetailsScreenScreen({ route }) {
 
 		if (!result.canceled) {
 			setImage(result.assets[0].uri);
+			setHasNewImage(true);
 		}
 	};
 
@@ -91,6 +108,7 @@ export default function StatusDetailsScreenScreen({ route }) {
 
 		if (!result.canceled) {
 			setImage(result.assets[0].uri);
+			setHasNewImage(true);
 		}
 	};
 
@@ -113,18 +131,6 @@ export default function StatusDetailsScreenScreen({ route }) {
 			longitudeDelta: 0.005,
 		});
 		setLocation(location.coords);
-	};
-
-	const generatePresignedUrl = () => {
-		const ImageKey = report.imageUrl.split('/').pop();
-		const params = {
-			Bucket: Constants.expoConfig.extra.BUCKET_NAME,
-			Key: ImageKey,
-			Expires: 60 // URL valid for 60 seconds
-		};
-		const ps_url = s3.getSignedUrl('getObject', params);
-		console.log(ps_url);
-		setImage(ps_url);
 	};
 
 	// ---------------- 4. Upload related code --------------------//
@@ -154,9 +160,11 @@ export default function StatusDetailsScreenScreen({ route }) {
 				details,
 				department: departments[departmentIndex].name,
 				location,
-				newImage: image !== report.imageUrl ? image : null, // Only upload new image if changed
+				newImage: hasNewImage ? image : null, // Only upload new image if changed
 			});
 			Alert.alert('Success', 'Report updated successfully');
+			setHasNewImage(false);
+			setGlobalParams(prev => ({ ...prev, needRefresh: true }));
 			navigation.goBack(); // Navigate back to StatusScreen
 		} catch (error) {
 			Alert.alert('Error', 'Failed to update report');
@@ -168,6 +176,7 @@ export default function StatusDetailsScreenScreen({ route }) {
 		try {
 			await deleteReport(report.report_id); // Delete the report and the image
 			Alert.alert('Success', 'Report deleted successfully');
+			setGlobalParams(prev => ({ ...prev, needRefresh: true }));
 			navigation.goBack(); // Navigate back to StatusScreen
 		} catch (error) {
 			Alert.alert('Error', 'Failed to delete report');
@@ -249,7 +258,6 @@ export default function StatusDetailsScreenScreen({ route }) {
 					<View style={styles.buttonContainer}>
 						<Button title="Take Photo" onPress={takePhoto} color="#444" />
 						<Button title="Pick from Library" onPress={pickImage} color="#444" />
-						{image && <Button title="Retake / Reselect" onPress={pickImage} color="#444" />}
 					</View>
 				</View>
 

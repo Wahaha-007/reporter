@@ -1,18 +1,53 @@
 import AWS from 'aws-sdk';
-import Constants from 'expo-constants';
 import uuid from 'react-native-uuid';
+import { AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION, BUCKET_NAME, DYNAMO_NAME, DYNAMO_ENDPOINT } from '@env';
 
 // ---------------- 1. AWS Infra related code --------------------//
 AWS.config.update({
-	accessKeyId: Constants.expoConfig.extra.AWS_ACCESS_KEY,
-	secretAccessKey: Constants.expoConfig.extra.AWS_SECRET_KEY,
-	region: Constants.expoConfig.extra.AWS_REGION
+	accessKeyId: `${AWS_ACCESS_KEY}`,
+	secretAccessKey: `${AWS_SECRET_KEY}`,
+	region: `${AWS_REGION}`
 });
 
 const s3 = new AWS.S3();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-// Fetch report details
+
+// ------------------2. Basic Operation -----------------------------------//
+export const generatePresignedUrl = (imageUrl) => {
+	let result = null;
+	if (imageUrl) { // ตรวจดูก่อนว่าไม่ได้ว่างเปล่า
+		const ImageKey = imageUrl.split('/').pop();
+		const params = {
+			Bucket: `${BUCKET_NAME}`,
+			Key: ImageKey,
+			Expires: 60 // URL valid for 60 seconds
+		};
+		result = s3.getSignedUrl('getObject', params);
+	}
+	return result;
+};
+
+export const uploadImageToS3 = async (image) => {
+	try {
+		const imageName = `${uuid.v4()}.jpg`; // Generate a unique file name
+		const response = await fetch(image); // อ่าน file เข้ามา
+		const blob = await response.blob(); // ทำ image file ให้เป็น Blob
+
+		const uploadParams = {
+			Bucket: `${BUCKET_NAME}`,
+			Key: imageName, // Filename
+			Body: blob,
+			ContentType: 'image/jpeg',
+		};
+
+		return s3.upload(uploadParams).promise();
+	} catch (error) {
+		console.error('Error uploading image: ', error);
+	}
+};
+
+// ------------------ 3. Complexed Operation -----------------------------------//
 export const getReportDetails = async (report_id) => {
 	const params = {
 		TableName: 'Reports',
@@ -30,10 +65,67 @@ export const getReportDetails = async (report_id) => {
 	}
 };
 
+export const getReportByUser = async (currentUser) => {
+	const params = {
+		TableName: 'Reports',
+		IndexName: 'UsernameIndex',
+		KeyConditionExpression: 'username = :username', // assuming name exists in reports
+		ExpressionAttributeValues: {
+			':username': currentUser,  // Replace with actual user ID
+		},
+	};
+
+	try {
+		const data = await dynamoDb.query(params).promise();
+		return data.Items;
+	} catch (error) {
+		console.error('Error fetching reports:', error);
+	}
+};
+
+export const createReport = async (newData) => {
+	const createdAt = new Date().toISOString();
+	const actionDate = [createdAt, "0", "0", "0"];
+	const actionNote = ["", "", "", ""];
+
+	try {
+		// 1. ถ้ามีรูปให้ Upload รูปก่อน
+		let imageUrl = null;
+		if (newData.image) {
+			const s3Response = await uploadImageToS3(newData.image);
+			imageUrl = s3Response.Location; // S3 image URL
+		}
+
+		// 2. Update DynamoDB
+		const params = {
+			TableName: 'Reports', // No need that high security
+			Item: {
+				report_id: uuid.v4(),
+				username: newData.username,
+				topic: newData.topic,
+				details: newData.details,
+				department: newData.department,
+				location: newData.location,
+				imageUrl: imageUrl,
+				status: "รายงาน",
+				actionNote,
+				actionDate, // 4 Dates for : submit, accept, processing, completed
+			},
+		};
+
+		// Store in DynamoDB
+		const result = await dynamoDb.put(params).promise();
+		console.log(`Report created successfully.`);
+		return result.Attributes; // Return create report attributes
+	} catch (error) {
+		console.error('Error creating report: ', error);
+		throw new Error('Failed to create report');
+	}
+};
+
 // Function to update a report in DynamoDB and optionally update the image in S3
 export const updateReport = async (report_id, updatedData) => {
-	// First, fetch the report to check if there's an existing image
-	console.log("Function called");
+
 	const reportParams = {
 		TableName: 'Reports',
 		Key: { report_id },
@@ -53,7 +145,7 @@ export const updateReport = async (report_id, updatedData) => {
 			if (report?.imageUrl) {
 				const oldImageKey = report.imageUrl.split('/').pop();
 				const s3DeleteParams = {
-					Bucket: Constants.expoConfig.extra.BUCKET_NAME, // Replace with your S3 bucket name
+					Bucket: `${BUCKET_NAME}`, // Replace with your S3 bucket name
 					Key: oldImageKey,
 				};
 				await s3.deleteObject(s3DeleteParams).promise();
@@ -66,7 +158,7 @@ export const updateReport = async (report_id, updatedData) => {
 			const blob = await response.blob();
 
 			const s3UploadParams = {
-				Bucket: Constants.expoConfig.extra.BUCKET_NAME, // Replace with your S3 bucket name
+				Bucket: `${BUCKET_NAME}`, // Replace with your S3 bucket name
 				Key: imageKey,
 				Body: blob,
 				ContentType: 'image/jpeg',
@@ -124,7 +216,7 @@ export const deleteReport = async (report_id) => {
 		if (report?.imageUrl) {
 			const imageKey = report.imageUrl.split('/').pop(); // Extract the image key from the URL
 			const s3Params = {
-				Bucket: Constants.expoConfig.extra.BUCKET_NAME,  // Replace with your S3 bucket name
+				Bucket: `${BUCKET_NAME}`,  // Replace with your S3 bucket name
 				Key: imageKey,                  // The key of the image to delete
 			};
 

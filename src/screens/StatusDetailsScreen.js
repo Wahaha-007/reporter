@@ -1,7 +1,7 @@
 // Date : 20 Sep 24
 // Purpose : หน้าที่ Copy มาจากหน้า  Report ปัญหาหลักแต่ว่ามี Pre-populate Data
 
-import React, { useState, useEffect, useContext } from 'react'; // System
+import React, { useState, useEffect } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
 import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -11,12 +11,9 @@ import { View, Text, TextInput, TouchableOpacity, Button, Image, StyleSheet, Scr
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
-import uuid from 'react-native-uuid';
 import PagerView from 'react-native-pager-view';
 
-import AWS from 'aws-sdk';
-import Constants from 'expo-constants';
-import { deleteReport, updateReport, getReportDetails } from '../services/awsDynamoDBFunctions';
+import { generatePresignedUrl, deleteReport, updateReport } from '../services/awsDatabase';
 
 const departments = [
 	{ name: 'HR', icon: 'people' },
@@ -53,38 +50,17 @@ export default function StatusDetailsScreenScreen({ route }) {
 
 	useEffect(() => {
 
-		generatePresignedUrl();
+		const ps_url = generatePresignedUrl(report.imageUrl);
+		setImage(ps_url);
 		setHasNewImage(false);
 
 	}, [report.imageUrl]);
 
-	const generatePresignedUrl = () => {
-		if (report.imageUrl) { // ตรวจดูก่อนว่าไม่ได้ว่างเปล่า
-			const ImageKey = report.imageUrl.split('/').pop();
-			const params = {
-				Bucket: Constants.expoConfig.extra.BUCKET_NAME,
-				Key: ImageKey,
-				Expires: 60 // URL valid for 60 seconds
-			};
-			const ps_url = s3.getSignedUrl('getObject', params);
-			setImage(ps_url);
-		}
-	};
 
 	// ณ ตอนนี้เรามี Prefilled Data พร้อมแสดงผลให้ User ดูแล้ว, 
 	// ต่อไปจะเป็น Function ที่ใช้ป้อนค่าใหม่ เหมือนในหน้า Report
 
-	// ---------------- 1. AWS Infra related code --------------------//
-	AWS.config.update({
-		accessKeyId: Constants.expoConfig.extra.AWS_ACCESS_KEY,
-		secretAccessKey: Constants.expoConfig.extra.AWS_SECRET_KEY,
-		region: Constants.expoConfig.extra.AWS_REGION
-	});
-
-	const s3 = new AWS.S3();
-	const dynamoDb = new AWS.DynamoDB.DocumentClient();
-
-	// ---------------- 2. GUI related code --------------------//
+	// ---------------- 1. GUI related code --------------------//
 	const pickImage = async () => {
 		let result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -133,25 +109,7 @@ export default function StatusDetailsScreenScreen({ route }) {
 		setLocation(location.coords);
 	};
 
-	// ---------------- 4. Upload related code --------------------//
-	const uploadImageToS3 = async () => {
-		try {
-			const imageName = `${uuid.v4()}.jpg`; // Generate a unique file name
-			const response = await fetch(image); // อ่าน file เข้ามา
-			const blob = await response.blob(); // ทำ image file ให้เป็น Blob
-
-			const uploadParams = {
-				Bucket: Constants.expoConfig.extra.BUCKET_NAME,
-				Key: imageName, // Filename
-				Body: blob,
-				ContentType: 'image/jpeg',
-			};
-
-			return s3.upload(uploadParams).promise();
-		} catch (error) {
-			console.error('Error uploading image: ', error);
-		}
-	};
+	// ---------------- 2. Upload related code --------------------//
 
 	const handleUpdate = async () => {
 		try {

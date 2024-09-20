@@ -8,10 +8,8 @@ import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Card, Button, Icon } from 'react-native-elements';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import AWS from 'aws-sdk';
-import Constants from 'expo-constants';
 import { styles } from '../styles/theme';
+import { getReportByUser } from '../services/awsDatabase';
 
 export default function StatusScreen() {
 
@@ -35,38 +33,15 @@ export default function StatusScreen() {
 		}
 	}, [isFocused]);
 
-	// ---------------- 1. AWS Infra related code --------------------//
-	AWS.config.update({
-		accessKeyId: Constants.expoConfig.extra.AWS_ACCESS_KEY,
-		secretAccessKey: Constants.expoConfig.extra.AWS_SECRET_KEY,
-		region: Constants.expoConfig.extra.AWS_REGION
-	});
 
-	const s3 = new AWS.S3();
-	const dynamoDb = new AWS.DynamoDB.DocumentClient();
-
-	// ---------------- 2. Database related code --------------------//
+	// ---------------- 1. Database related code --------------------//
 	const fetchReports = async () => {
-		const params = {
-			TableName: 'Reports',
-			IndexName: 'UsernameIndex',
-			KeyConditionExpression: 'username = :username', // assuming name exists in reports
-			ExpressionAttributeValues: {
-				':username': currentUser,  // Replace with actual user ID
-			},
-		};
-		console.log("Prefetch:", currentUser);
-
-		try {
-			const data = await dynamoDb.query(params).promise();
-			setGlobalParams(prev => ({ ...prev, needRefresh: false }));
-			setReports(data.Items);
-		} catch (error) {
-			console.error('Error fetching reports:', error);
-		}
+		const data = await getReportByUser(currentUser);
+		setReports(data);
+		setGlobalParams(prev => ({ ...prev, needRefresh: false }));
 	};
 
-	// ---------------- 3. GUI related code --------------------//
+	// ---------------- 2. GUI related code --------------------//
 	// Render progress status as graphical representation
 	const renderStatus = (status) => {
 		const statuses = ['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'];
@@ -108,14 +83,14 @@ export default function StatusScreen() {
 						{renderStatus(report.status)}
 					</View>
 					<Text style={styles.topic}>{report.topic}</Text>
-					<Text style={styles.details}>Details: {shortenString(report.details)}</Text>
+					<Text onPress={() => navigation.navigate('StatusDetails', { report })} style={styles.details} >Details: {shortenString(report.details)}</Text>
 
-					<Button
+					{/* <Button
 						title="View Details"
 						// onPress={() => navigation.navigate('StatusDetails', { report_id: report.report_id })}
 						onPress={() => navigation.navigate('StatusDetails', { report })}
 						buttonStyle={styles.viewButton}
-					/>
+					/> */}
 				</Card>
 			))}
 		</ScrollView>

@@ -1,7 +1,7 @@
 // Date : 18 Sep 24
 // Purpose : หน้า  Report ปัญหาเข้า Center คล้ายๆ Traffy Fondu
 
-import React, { useState, useEffect, useContext } from 'react'; // System
+import React, { useState, useEffect } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
 import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -11,12 +11,10 @@ import { View, Text, TextInput, TouchableOpacity, Button, Image, StyleSheet, Scr
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
-import uuid from 'react-native-uuid';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PagerView from 'react-native-pager-view';
 
-import AWS from 'aws-sdk';
-import Constants from 'expo-constants';
+import { createReport } from '../services/awsDatabase';
 
 const departments = [
 	{ name: 'HR', icon: 'people' },
@@ -59,17 +57,7 @@ export default function ReportScreen() {
 
 	const navigation = useNavigation();
 
-	// ---------------- 1. AWS Infra related code --------------------//
-	AWS.config.update({
-		accessKeyId: Constants.expoConfig.extra.AWS_ACCESS_KEY,
-		secretAccessKey: Constants.expoConfig.extra.AWS_SECRET_KEY,
-		region: Constants.expoConfig.extra.AWS_REGION
-	});
-
-	const s3 = new AWS.S3();
-	const dynamoDb = new AWS.DynamoDB.DocumentClient();
-
-	// ---------------- 2. GUI related code --------------------//
+	// ---------------- 1. GUI related code --------------------//
 	const pickImage = async () => {
 		let result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -116,7 +104,7 @@ export default function ReportScreen() {
 		setLocation(location.coords);
 	};
 
-	// ---------------- 3. UserName related code --------------------//
+	// ---------------- 2. UserName related code --------------------//
 
 	const generateRandomName = () => {
 		const adjectives = ['Brave', 'Calm', 'Bright', 'Eager'];
@@ -143,25 +131,7 @@ export default function ReportScreen() {
 		}
 	};
 
-	// ---------------- 4. Upload related code --------------------//
-	const uploadImageToS3 = async () => {
-		try {
-			const imageName = `${uuid.v4()}.jpg`; // Generate a unique file name
-			const response = await fetch(image); // อ่าน file เข้ามา
-			const blob = await response.blob(); // ทำ image file ให้เป็น Blob
-
-			const uploadParams = {
-				Bucket: Constants.expoConfig.extra.BUCKET_NAME,
-				Key: imageName, // Filename
-				Body: blob,
-				ContentType: 'image/jpeg',
-			};
-
-			return s3.upload(uploadParams).promise();
-		} catch (error) {
-			console.error('Error uploading image: ', error);
-		}
-	};
+	// ---------------- 3. Upload related code --------------------//
 
 	const clearData = () => {
 		setUsername('');
@@ -173,60 +143,31 @@ export default function ReportScreen() {
 	};
 
 	const handleSubmit = async () => {
-		const createdAt = new Date().toISOString();
-		const actionDate = [createdAt, "0", "0", "0"];
-		const actionNote = ["", "", "", ""];
-
 		try {
-			// Upload the image to S3 first
-			let imageUrl = null;
-			if (image) {
-				const s3Response = await uploadImageToS3();
-				imageUrl = s3Response.Location; // S3 image URL
-			}
-
-			// 1. Write to AWS Backend
-			// Prepare DynamoDB entry
-			const params = {
-				TableName: 'Reports', // No need that high security
-				Item: {
-					report_id: uuid.v4(),
-					username,
-					topic,
-					details,
-					department: departments[departmentIndex].name,
-					location,
-					imageUrl,
-					status: "รายงาน",
-					actionNote,
-					actionDate, // 4 Dates for : submit, accept, processing, completed
-				},
-			};
-
-			// Store in DynamoDB
-			await dynamoDb.put(params).promise();
+			await createReport({
+				username,
+				topic,
+				details,
+				department: departments[departmentIndex].name,
+				location,
+				image
+			});
+			Alert.alert('Success', 'Report created successfully');
 			await AsyncStorage.setItem('username', username);
-			setGlobalParams(prev => ({ ...prev, currentUser: username }));
-
-			console.log('Report submitted:', params);
-			setGlobalParams(prev => ({ ...prev, needRefresh: true }));
-
-			// 2. Clear the form data
+			setGlobalParams(prev => ({ ...prev, currentUser: username, needRefresh: true }));
 			clearData();
+			navigation.navigate('Status');
 
-			// Navigate to the "Status" page
-			navigation.navigate('StatusList');
 		} catch (error) {
 			console.error('Error submitting report:', error);
-			Alert.alert('Error', 'Failed to submit report.');
+			Alert.alert('Error', 'Failed to update report');
 		}
-	};
+	}
 
 	return (
 
 		<ScrollView style={styles.container}>
-
-			<Text style={styles.label}>Name (Optional):</Text>
+			<Text style={styles.label}>ชื่อ (Optional):</Text>
 			<View style={styles.inputContainer}>
 				<TextInput
 					style={styles.input}
@@ -240,7 +181,7 @@ export default function ReportScreen() {
 				</TouchableOpacity>
 			</View>
 
-			<Text style={styles.label}>Topic:</Text>
+			<Text style={styles.label}>หัวข้อ:</Text>
 			<View style={styles.inputContainer}>
 				<TextInput
 					style={styles.input}
@@ -254,7 +195,7 @@ export default function ReportScreen() {
 				</TouchableOpacity>
 			</View>
 
-			<Text style={styles.label}>Details:</Text>
+			<Text style={styles.label}>เนื้อหา:</Text>
 			<View style={styles.inputContainer}>
 				<TextInput
 					style={styles.input}
@@ -269,7 +210,7 @@ export default function ReportScreen() {
 				</TouchableOpacity>
 			</View>
 
-			<Text style={styles.label}>Location:</Text>
+			<Text style={styles.label}>สถานที่:</Text>
 			<MapView
 				style={styles.map}
 				region={region}
@@ -279,17 +220,16 @@ export default function ReportScreen() {
 			</MapView>
 			<Button title="Get Current Location" onPress={getLocation} color="#444" />
 
-			<Text style={styles.label}>Picture:</Text>
+			<Text style={styles.label}>รูป:</Text>
 			<View style={styles.imageContainer}>
 				{image && <Image source={{ uri: image }} style={styles.image} />}
 				<View style={styles.buttonContainer}>
 					<Button title="Take Photo" onPress={takePhoto} color="#444" />
 					<Button title="Pick from Library" onPress={pickImage} color="#444" />
-					{image && <Button title="Retake / Reselect" onPress={pickImage} color="#444" />}
 				</View>
 			</View>
 
-			<Text style={styles.label}>Responsible Department:</Text>
+			<Text style={styles.label}>หน่วยงาน:</Text>
 			<PagerView
 				style={styles.pagerView}
 				initialPage={0}
@@ -307,7 +247,5 @@ export default function ReportScreen() {
 				<Text style={styles.submitButtonText}>Submit</Text>
 			</TouchableOpacity>
 		</ScrollView>
-
 	);
 };
-

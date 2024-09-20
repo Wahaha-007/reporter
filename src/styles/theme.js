@@ -7,6 +7,16 @@ export const styles = StyleSheet.create({
 		backgroundColor: '#000',
 		padding: 5,
 	},
+	innerContainer: {
+		flex: 1,
+		backgroundColor: '#1c1c1e',
+		borderRadius: 10,
+		padding: 10,
+		marginBottom: 10,
+		marginTop: 10,
+		borderColor: 'white',
+		borderWidth: 1,
+	},
 	label: {
 		color: 'white',
 		fontSize: 18,
@@ -96,6 +106,7 @@ export const styles = StyleSheet.create({
 	},
 	statusSection: {
 		marginBottom: 10,
+		alignItems: 'center',
 	},
 	statusContainer: {
 		flexDirection: 'row',

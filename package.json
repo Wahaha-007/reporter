@@ -11,9 +11,12 @@
   "dependencies": {
     "@aws-amplify/datastore": "^5.0.51",
     "@aws-amplify/storage": "^6.6.7",
+    "@aws-sdk/client-dynamodb": "^3.654.0",
+    "@aws-sdk/client-s3": "^3.654.0",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.18",
+    "@react-navigation/stack": "^6.4.1",
     "aws-amplify": "^6.6.2",
     "aws-sdk": "^2.1691.0",
     "expo": "~51.0.28",
@@ -28,7 +31,8 @@
     "react-native-maps": "1.14.0",
     "react-native-pager-view": "6.3.0",
     "react-native-uuid": "^2.0.2",
-    "react-native-vector-icons": "^10.2.0"
+    "react-native-vector-icons": "^10.2.0",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

@@ -11,8 +11,8 @@ import { Card, Button, Icon } from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AWS from 'aws-sdk';
 import Constants from 'expo-constants';
-
 import { styles } from '../styles/theme';
+
 export default function StatusScreen() {
 
 	const [username, setUsername] = useState('');
@@ -47,17 +47,17 @@ export default function StatusScreen() {
 
 	// ---------------- 2. Database related code --------------------//
 	const fetchReports = async () => {
-
+		const params = {
+			TableName: 'Reports',
+			IndexName: 'UsernameIndex',
+			KeyConditionExpression: 'username = :username', // assuming name exists in reports
+			ExpressionAttributeValues: {
+				':username': currentUser,  // Replace with actual user ID
+			},
+		};
 		console.log("Prefetch:", currentUser);
+
 		try {
-			const params = {
-				TableName: 'Reports',
-				IndexName: 'UsernameIndex',
-				KeyConditionExpression: 'username = :username', // assuming name exists in reports
-				ExpressionAttributeValues: {
-					':username': currentUser,  // Replace with actual user ID
-				},
-			};
 			const data = await dynamoDb.query(params).promise();
 			setGlobalParams(prev => ({ ...prev, needRefresh: false }));
 			setReports(data.Items);
@@ -102,18 +102,18 @@ export default function StatusScreen() {
 			<Text style={styles.topic}>{username}</Text>
 			{reports.map((report) => (
 				<Card key={report.report_id} containerStyle={styles.card}>
+					{/* Render the status with progress indicator */}
+					<View style={styles.statusSection}>
+						{/* <Text style={styles.statusLabel}>Status:</Text> */}
+						{renderStatus(report.status)}
+					</View>
 					<Text style={styles.topic}>{report.topic}</Text>
 					<Text style={styles.details}>Details: {shortenString(report.details)}</Text>
 
-					{/* Render the status with progress indicator */}
-					<View style={styles.statusSection}>
-						<Text style={styles.statusLabel}>Status:</Text>
-						{renderStatus(report.status)}
-					</View>
-
 					<Button
 						title="View Details"
-						// onPress={() => navigation.navigate('StatusDetailsScreen', { reportId: report.reportId })}
+						// onPress={() => navigation.navigate('StatusDetails', { report_id: report.report_id })}
+						onPress={() => navigation.navigate('StatusDetails', { report })}
 						buttonStyle={styles.viewButton}
 					/>
 				</Card>

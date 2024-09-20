@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-// import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator } from '@react-navigation/stack';
 // import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { GlobalProvider } from '../context/GlobalContext';  // Context
@@ -14,7 +14,7 @@ import { styles } from '../styles/theme';
 
 import ReportScreen from '../screens/ReportScreen';
 import StatusScreen from '../screens/StatusScreen';
-// import CameraScreen from '../screens/CameraScreen';
+import StatusDetailsScreen from '../screens/StatusDetailsScreen';
 // import TaskDisplayScreen from '../screens/TaskDisplayScreen';
 // import BreakageInputScreen from '../screens/BreakageInputScreen';
 
@@ -25,7 +25,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Import M
 
 
 const Tab = createBottomTabNavigator();
-// const Stack = createStackNavigator();
+const Stack = createStackNavigator();
 // const ScannerTab = createMaterialTopTabNavigator();
 
 // function ScannerTabNavigator() { // เฉพาะที่ต้องการให้ Swip ได้ ในส่วนของ Scanner pages
@@ -38,14 +38,14 @@ const Tab = createBottomTabNavigator();
 // 	);
 // }
 
-// function ScannerStackNavigator() { // กลุ่มหลักของ Scanner pages (รวมกล้องด้วย)
-// 	return (
-// 		<Stack.Navigator>
-// 			<Stack.Screen name="ScannerTab" component={ScannerTabNavigator} options={{ headerShown: false }} />
-// 			<Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: false }} />
-// 		</Stack.Navigator>
-// 	);
-// }
+function StatusStackNavigator() { // กลุ่มหลักของ Status pages
+	return (
+		<Stack.Navigator>
+			<Stack.Screen name="StatusList" component={StatusScreen} options={{ headerShown: true }} />
+			<Stack.Screen name="StatusDetails" component={StatusDetailsScreen} options={{ headerShown: true }} />
+		</Stack.Navigator>
+	);
+}
 
 export default function AppNavigator() {
 	return (
@@ -70,7 +70,7 @@ export default function AppNavigator() {
 					})}
 				>
 					<Tab.Screen name="Report" component={ReportScreen} />
-					<Tab.Screen name="Status" component={StatusScreen} />
+					<Tab.Screen name="Status" component={StatusStackNavigator} options={{ headerShown: false }} />
 				</Tab.Navigator>
 			</NavigationContainer>
 		</GlobalProvider>

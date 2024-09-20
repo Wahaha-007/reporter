@@ -215,7 +215,7 @@ export default function ReportScreen() {
 			clearData();
 
 			// Navigate to the "Status" page
-			navigation.navigate('Status');
+			navigation.navigate('StatusList');
 		} catch (error) {
 			console.error('Error submitting report:', error);
 			Alert.alert('Error', 'Failed to submit report.');

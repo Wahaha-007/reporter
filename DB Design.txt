@@ -1,0 +1,139 @@
+I am designing are problem report system on Mobile Apps using ReactNative (with Expo).
+Currently we record data into DynamoDB with the following schema
+
+report_id (Partition key) String
+department String
+details String
+imageUrl String
+location Map
+status String (There are 4 possible statuses : Report/Ack/Solving/Done
+topic String
+username String (in Email format)
+reportDate String
+
+This is OK. for user to record the problem into the database.
+But we also need to responsible person from each department to log into the system.
+Then update the status of each problem, including 'status' itself, image of task, who did it, comment....
+The user can also see how his/her problem report is responded.
+
+Help me to design the database. Do we need more tables or same tables with more attributes ?
+
+
+=======================================================================================
+
+
+
+Update Table Design
+Here’s how we can structure the Update Table to account for this flexibility:
+
+Update Table Schema:
+update_id (Partition key): String (unique ID for each update)
+report_id (Sort key): String (links the update to the original report)
+status: String (Ack/Solving/Done — can also include "In Progress")
+progressImageUrl: String (an image representing current progress)
+comments: String (progress comments by the assigned person)
+updatedBy: String (email of the person who made the update)
+updatedDate: String (timestamp of when the update was made)
+assignedPerson: String (the person assigned to handle the report)
+progressType: String (could be “initial_acknowledgement,” “progress_update,” or “final_update” to distinguish the type of update)
+Example Flow:
+Initial Acknowledgement (Status = Ack):
+
+update_id: Unique ID for this update
+report_id: The report_id of the original report
+status: Ack
+progressImageUrl: (Optional)
+comments: "Acknowledged the problem. Will begin working on it."
+updatedBy: Assigned person's email
+updatedDate: The date this update is made
+assignedPerson: The person assigned to handle the task
+progressType: "initial_acknowledgement"
+Intermediate Progress Update (Status = Solving):
+
+update_id: New unique ID
+report_id: The same report_id as the original report
+status: Solving (or "In Progress" if you prefer)
+progressImageUrl: Updated image showing current state (e.g., partially fixed issue)
+comments: "Fixing the issue, waiting for parts."
+updatedBy: Assigned person's email
+updatedDate: Date of the update
+progressType: "progress_update"
+Final Completion Update (Status = Done):
+
+update_id: Another unique ID
+report_id: Same report_id as the original report
+status: Done
+progressImageUrl: Final image of the resolved issue
+comments: "Issue resolved, all systems operational."
+updatedBy: Assigned person's email
+updatedDate: Date of completion
+progressType: "final_update"
+Benefits of This Approach:
+Multiple Updates: Each time the assigned person makes progress, they can log a new update with images, comments, and status.
+Progress Tracking: You can show the history of the report, detailing every step from acknowledgment to final resolution.
+Query Flexibility: Since each update is a separate item, you can query the Update Table for all updates related to a specific report_id and display them to the reporting user.
+Fine-Grained Control: The progressType field allows you to distinguish between different types of updates (initial, progress, final), and the status field keeps track of the current phase (Ack, Solving, Done).
+
+
+==================================================================
+
+Now My current Apps has the following screen
+
+1. SignIn (with Email and password, use Email as the user identification. The system also use Email to read user 'role' from another DynamoDB)
+2. SignUp
+3. Report ( After signIn, this is the first page for user to report the problem )
+4. Status ( Display the list of all problems reported by this user in card format)
+5. StatusDetails ( If the user click the card above, this page will show more details of the specific report)
+6. User ( Contain user details and also log-out button)
+
+In case that the reponsible person logged-in, the apps screen displayed should change, for sure it will have
+1. SignIn (Common page as above)
+2. SignUp (Common page as above)
+
+But what the other screens the apps should have to accomplish the task ?
+
+
+
+
+
+
+
+
+In ReactNative AppNavigator.js, there is the navigator like this
+
+function MainTabNavigator() {
+	return (
+		<Tab.Navigator>
+			<Tab.Screen name="ReportTypeA" component={ReportScreen} />
+			<Tab.Screen name="ReportTypeB" component={ReportScreen} />
+			<Tab.Screen name="ReportTypeC" component={ReportScreen} />
+			<Tab.Screen name="Status" component={StatusStackNavigator} options={{ headerShown: false }} />
+			<Tab.Screen name="User" component={UserScreen} />
+		</Tab.Navigator>
+	);
+}
+
+export default function AppNavigator() {
+return (
+		<GlobalProvider>
+				<NavigationContainer>
+					<AuthStack.Navigator>
+						<AuthStack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: true }} />
+						<AuthStack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: true }} />
+						<AuthStack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: false }} />
+					</AuthStack.Navigator>
+				</NavigationContainer>
+		</GlobalProvider>
+)} 
+
+My question is : If in SignInScreen, user successfully signed-in and we know his 'name' and his 'role'. 
+We wanto to display the Tab screen 'ReportTypeA', 'ReportTypeB', 'ReportTypeB' only 1 not all 3 screens based on his 'role'.
+How can we do this ?
+
+
+
+
+
+
+
+

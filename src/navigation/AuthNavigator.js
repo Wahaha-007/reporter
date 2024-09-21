@@ -15,10 +15,10 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Import M
 
 import SignUpScreen from '../screensAuth/SignUpScreen';
 import SignInScreen from '../screensAuth/SignInScreen';
-import ReportScreen from '../screens/ReportScreen';
-import StatusScreen from '../screens/StatusScreen';
-import StatusDetailsScreen from '../screens/StatusDetailsScreen';
-import UserScreen from '../screens/UserScreen';
+import ReportScreen from '../screensUser/ReportScreen';
+import StatusScreen from '../screensUser/StatusScreen';
+import StatusDetailsScreen from '../screensUser/StatusDetailsScreen';
+import UserScreen from '../screensUser/UserScreen';
 
 const AuthStack = createStackNavigator(); // เรียงตามลำดับของการใช้งานจริงเลย
 const Tab = createBottomTabNavigator();

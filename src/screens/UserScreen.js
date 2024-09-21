@@ -1,13 +1,13 @@
 //  นี่เป็นหน้าแรกของชุด Stack 'Main', Navigate Main ก็คือมาที่นี่แหละ
 import React, { useState } from 'react';
 import { View, Text, Button, Alert } from 'react-native';
-// import { SecureStore } from 'expo-secure-store';
 import * as SecureStore from 'expo-secure-store';
+import { styles } from '../styles/theme';
 
 // -- ส่วนดูดข้อมูลจาก Global Context --//
 import { useGlobalContext } from '../context/GlobalContext';
 
-const WelcomeScreen = ({ navigation }) => {
+const UserScreen = ({ navigation }) => {
 
 	const { globalParams, setGlobalParams } = useGlobalContext();
 	const { user } = globalParams;
@@ -24,7 +24,7 @@ const WelcomeScreen = ({ navigation }) => {
 				{
 					text: 'Yes', onPress: async () => {
 						await SecureStore.deleteItemAsync('userData');
-						navigation.navigate('SignIn');
+						navigation.replace('SignIn');
 					},
 				},
 			]
@@ -32,12 +32,14 @@ const WelcomeScreen = ({ navigation }) => {
 	};
 
 	return (
-		<View>
-			<Text>Welcome, {email}</Text>
-			<Text>Your role: {role}</Text>
-			<Button title="Log Out" onPress={handleLogout} />
+		<View style={styles.container}>
+			<View style={styles.innerContainer}>
+				<Text style={styles.label}>User: {email}</Text>
+				<Text style={styles.label}>Role: {role}</Text>
+				<Button title="Log Out" onPress={handleLogout} />
+			</View>
 		</View>
 	);
 };
 
-export default WelcomeScreen;
+export default UserScreen;

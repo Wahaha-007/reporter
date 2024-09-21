@@ -13,17 +13,18 @@ import { getReportByUser } from '../services/awsDatabase';
 
 export default function StatusScreen() {
 
-	const [username, setUsername] = useState('');
-	const isFocused = useIsFocused();
+	// ข้อมูลของ Login user ปัจจุบันจาก Global Context
 	const { globalParams, setGlobalParams } = useGlobalContext();
+	const { user } = globalParams;
+	const [email, setEmail] = useState(user.email);
+	const [role, setRole] = useState(user.role);
 
-	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
-	const navigation = useNavigation();
+	// ข้อมูลเฉพาะของหน้านี้
 	const { needRefresh, currentUser } = globalParams;
+	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
 
-	useEffect(() => {
-		setUsername(currentUser);
-	}, []);
+	const isFocused = useIsFocused();
+	const navigation = useNavigation();
 
 	useEffect(() => {
 		if (isFocused) {
@@ -33,11 +34,10 @@ export default function StatusScreen() {
 		}
 	}, [isFocused]);
 
-
 	// ---------------- 1. Database related code --------------------//
 	const fetchReports = async () => {
-		const data = await getReportByUser(currentUser);
-		setReports(data);
+		const data = await getReportByUser(email);
+		if (data) setReports(data);
 		setGlobalParams(prev => ({ ...prev, needRefresh: false }));
 	};
 
@@ -73,26 +73,29 @@ export default function StatusScreen() {
 	// 2.3 ส่วน GUI Render
 	// Display : Topic, Details, Submittted on, 
 	return (
-		<ScrollView style={styles.container}>
-			<Text style={styles.topic}>{username}</Text>
-			{reports.map((report) => (
-				<Card key={report.report_id} containerStyle={styles.card}>
-					{/* Render the status with progress indicator */}
-					<View style={styles.statusSection}>
-						{/* <Text style={styles.statusLabel}>Status:</Text> */}
-						{renderStatus(report.status)}
-					</View>
-					<Text style={styles.topic}>{report.topic}</Text>
-					<Text onPress={() => navigation.navigate('StatusDetails', { report })} style={styles.details} >Details: {shortenString(report.details)}</Text>
-
-					{/* <Button
-						title="View Details"
-						// onPress={() => navigation.navigate('StatusDetails', { report_id: report.report_id })}
-						onPress={() => navigation.navigate('StatusDetails', { report })}
-						buttonStyle={styles.viewButton}
-					/> */}
-				</Card>
-			))}
-		</ScrollView>
+		<>
+			{reports.length === 0 ? (
+				<View style={styles.noDataContainer}>
+					<Text style={styles.noDataText}>- No data -</Text>
+				</View>
+			) : (
+				<ScrollView style={styles.container}>
+					{reports.map((report) => (
+						<Card key={report.report_id} containerStyle={styles.card}>
+							<View style={styles.statusSection}>
+								{renderStatus(report.status)}
+							</View>
+							<Text style={styles.topic}>{report.topic}</Text>
+							<Text
+								onPress={() => navigation.navigate('รายละเอียด', { report })}
+								style={styles.details}
+							>
+								Details: {shortenString(report.details)}
+							</Text>
+						</Card>
+					))}
+				</ScrollView>
+			)}
+		</>
 	);
 };

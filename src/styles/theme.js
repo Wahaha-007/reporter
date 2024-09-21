@@ -51,6 +51,7 @@ export const styles = StyleSheet.create({
 	buttonContainer: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
+		gap: 20,
 	},
 	map: {
 		height: 200,
@@ -70,7 +71,7 @@ export const styles = StyleSheet.create({
 		marginTop: 10,
 	},
 	submitButton: {
-		backgroundColor: '#444',
+		backgroundColor: '#2196F3',
 		paddingVertical: 15,
 		borderRadius: 5,
 		alignItems: 'center',
@@ -134,6 +135,17 @@ export const styles = StyleSheet.create({
 	viewButton: {
 		backgroundColor: '#007AFF',
 		marginTop: 10,
+	},
+	noDataContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: '#000',
+	},
+	noDataText: {
+		fontSize: 24,
+		color: '#444',
+		textAlign: 'center',
 	},
 });
 

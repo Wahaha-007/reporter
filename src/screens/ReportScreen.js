@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
-import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
+import { useNavigation } from '@react-navigation/native'; // View
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../styles/theme';
 import { View, Text, TextInput, TouchableOpacity, Button, Image, StyleSheet, ScrollView, Alert } from 'react-native';
@@ -26,27 +26,19 @@ const departments = [
 ];
 
 export default function ReportScreen() {
-	const isFocused = useIsFocused();
+
+	// ข้อมูลของ Login user ปัจจุบันจาก Global Context
 	const { globalParams, setGlobalParams } = useGlobalContext();
+	const { user } = globalParams;
+	const [email, setEmail] = useState(user.email);
+	const [role, setRole] = useState(user.role);
 
-	useEffect(() => {
-		if (isFocused) { // จะเปลี่ยนตอนเข้าหรือออกก็ได้เลือกเอาอย่างนึง
-			//	setGlobalParams(prev => ({ ...prev, Newkey: 'NewValue' })); // ชื่อ key ไม่ต้องมี ''
-		}
-	}, [isFocused]);
-
-	useEffect(() => {
-		loadName();
-		setGlobalParams(prev => ({ ...prev, needRefresh: true }));
-	}, []);
-
+	// ข้อมูลของแบบฟอร์ม
 	const [username, setUsername] = useState('');
 	const [topic, setTopic] = useState('');
 	const [details, setDetails] = useState('');
 	const [image, setImage] = useState(null);
-
 	const [departmentIndex, setDepartmentIndex] = useState(0);
-
 	const [location, setLocation] = useState(null);
 	const [region, setRegion] = useState({
 		latitude: 37.78825,
@@ -56,6 +48,11 @@ export default function ReportScreen() {
 	});
 
 	const navigation = useNavigation();
+
+	useEffect(() => {
+		setGlobalParams(prev => ({ ...prev, needRefresh: true })); // ต้องทำเพราะตัวเองเป็นหน้าแรกของกลุ่ม ต้องบอกเพื่อน
+		setUsername(email);
+	}, []);
 
 	// ---------------- 1. GUI related code --------------------//
 	const pickImage = async () => {
@@ -104,33 +101,6 @@ export default function ReportScreen() {
 		setLocation(location.coords);
 	};
 
-	// ---------------- 2. UserName related code --------------------//
-
-	const generateRandomName = () => {
-		const adjectives = ['Brave', 'Calm', 'Bright', 'Eager'];
-		const animals = ['Tiger', 'Eagle', 'Dolphin', 'Fox'];
-		const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-		const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
-		return `${randomAdjective} ${randomAnimal}`;
-	};
-
-	const loadName = async () => {
-		try {
-			const savedName = await AsyncStorage.getItem('username');
-			if (savedName) {
-				setUsername(savedName);  // Set the name from storage
-				setGlobalParams(prev => ({ ...prev, currentUser: savedName }));
-			} else {
-				const newName = generateRandomName();
-				await AsyncStorage.setItem('username', newName);  // Save the generated name
-				setUsername(newName);  // Set the generated name
-				setGlobalParams(prev => ({ ...prev, currentUser: newName }));
-			}
-		} catch (error) {
-			console.error('Error loading or generating name:', error);
-		}
-	};
-
 	// ---------------- 3. Upload related code --------------------//
 
 	const clearData = () => {
@@ -156,7 +126,7 @@ export default function ReportScreen() {
 			await AsyncStorage.setItem('username', username);
 			setGlobalParams(prev => ({ ...prev, currentUser: username, needRefresh: true }));
 			clearData();
-			navigation.navigate('Status');
+			navigation.navigate('สถานะ');
 
 		} catch (error) {
 			console.error('Error submitting report:', error);
@@ -167,85 +137,88 @@ export default function ReportScreen() {
 	return (
 
 		<ScrollView style={styles.container}>
-			<Text style={styles.label}>ชื่อ (Optional):</Text>
-			<View style={styles.inputContainer}>
-				<TextInput
-					style={styles.input}
-					placeholder="Enter your name (or I will)"
-					placeholderTextColor="#999"
-					value={username}
-					onChangeText={setUsername}
-				/>
-				<TouchableOpacity>
-					<Icon name="mic" size={24} color="white" />
-				</TouchableOpacity>
-			</View>
-
-			<Text style={styles.label}>หัวข้อ:</Text>
-			<View style={styles.inputContainer}>
-				<TextInput
-					style={styles.input}
-					placeholder="Enter topic"
-					placeholderTextColor="#999"
-					value={topic}
-					onChangeText={setTopic}
-				/>
-				<TouchableOpacity>
-					<Icon name="mic" size={24} color="white" />
-				</TouchableOpacity>
-			</View>
-
-			<Text style={styles.label}>เนื้อหา:</Text>
-			<View style={styles.inputContainer}>
-				<TextInput
-					style={styles.input}
-					placeholder="Enter details"
-					placeholderTextColor="#999"
-					value={details}
-					onChangeText={setDetails}
-					multiline
-				/>
-				<TouchableOpacity>
-					<Icon name="mic" size={24} color="white" />
-				</TouchableOpacity>
-			</View>
-
-			<Text style={styles.label}>สถานที่:</Text>
-			<MapView
-				style={styles.map}
-				region={region}
-				onPress={(e) => setLocation(e.nativeEvent.coordinate)}
-			>
-				{location && <Marker coordinate={location} />}
-			</MapView>
-			<Button title="Get Current Location" onPress={getLocation} color="#444" />
-
-			<Text style={styles.label}>รูป:</Text>
-			<View style={styles.imageContainer}>
-				{image && <Image source={{ uri: image }} style={styles.image} />}
-				<View style={styles.buttonContainer}>
-					<Button title="Take Photo" onPress={takePhoto} color="#444" />
-					<Button title="Pick from Library" onPress={pickImage} color="#444" />
+			<View style={styles.innerContainer}>
+				<Text style={styles.label}>ผู้ส่ง:</Text>
+				<View style={styles.inputContainer}>
+					<TextInput
+						style={styles.input}
+						placeholder="Enter your name"
+						placeholderTextColor="#999"
+						value={username}
+						// onChangeText={setUsername}
+						editable={false}
+					/>
+					<TouchableOpacity>
+						<Icon name="mic" size={24} color="white" />
+					</TouchableOpacity>
 				</View>
-			</View>
 
-			<Text style={styles.label}>หน่วยงาน:</Text>
-			<PagerView
-				style={styles.pagerView}
-				initialPage={0}
-				onPageSelected={handlePageSelected}
-			>
-				{departments.map((dept, index) => (
-					<View key={index} style={styles.page}>
-						<Icon name={dept.icon} size={80} color="#fff" />
-						<Text style={styles.departmentName}>{dept.name}</Text>
+				<Text style={styles.label}>หัวข้อ:</Text>
+				<View style={styles.inputContainer}>
+					<TextInput
+						style={styles.input}
+						placeholder="Enter topic"
+						placeholderTextColor="#999"
+						value={topic}
+						onChangeText={setTopic}
+					/>
+					<TouchableOpacity>
+						<Icon name="mic" size={24} color="white" />
+					</TouchableOpacity>
+				</View>
+
+				<Text style={styles.label}>เนื้อหา:</Text>
+				<View style={styles.inputContainer}>
+					<TextInput
+						style={styles.input}
+						placeholder="Enter details"
+						placeholderTextColor="#999"
+						value={details}
+						onChangeText={setDetails}
+						multiline
+					/>
+					<TouchableOpacity>
+						<Icon name="mic" size={24} color="white" />
+					</TouchableOpacity>
+				</View>
+
+				<Text style={styles.label}>สถานที่:</Text>
+				<MapView
+					style={styles.map}
+					region={region}
+					onPress={(e) => setLocation(e.nativeEvent.coordinate)}
+				>
+					{location && <Marker coordinate={location} />}
+				</MapView>
+				<Button title="Get Current Location" onPress={getLocation} color="#444" />
+
+				<Text style={styles.label}>รูป:</Text>
+				<View style={styles.imageContainer}>
+					{image && <Image source={{ uri: image }} style={styles.image} />}
+					<View style={styles.buttonContainer}>
+						<Button title="Take Photo" onPress={takePhoto} color="#444" />
+						<Button title="Pick from Library" onPress={pickImage} color="#444" />
 					</View>
-				))}
-			</PagerView>
+				</View>
 
-			<TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-				<Text style={styles.submitButtonText}>Submit</Text>
-			</TouchableOpacity>
+				<Text style={styles.label}>หน่วยงาน:</Text>
+				<PagerView
+					style={styles.pagerView}
+					initialPage={0}
+					onPageSelected={handlePageSelected}
+				>
+					{departments.map((dept, index) => (
+						<View key={index} style={styles.page}>
+							<Icon name={dept.icon} size={80} color="#fff" />
+							<Text style={styles.departmentName}>{dept.name}</Text>
+						</View>
+					))}
+				</PagerView>
+
+				<TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+					<Text style={styles.submitButtonText}>Submit</Text>
+				</TouchableOpacity>
+			</View>
 		</ScrollView>
 	);
 };

@@ -24,7 +24,7 @@ const SignInScreen = ({ navigation }) => {
 				const user = JSON.parse(userData);
 
 				setGlobalParams(prev => ({ ...prev, user }));
-				navigation.navigate('Main');
+				navigation.replace('Main');
 			}
 		};
 

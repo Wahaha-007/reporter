@@ -1,6 +1,6 @@
 // Date : 19 Sep 24
 // Purpose : หน้า Status สำหรับ User ติดตามที่ได้รายงานไว้
-// Note   : - หน้านี้จะไม่มีการเปปลี่ยน  User นะ
+// Note   : - หน้านี้จะไม่มีการเปลี่ยน  User นะ
 
 import React, { useState, useEffect, useContext } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
@@ -20,7 +20,7 @@ export default function StatusScreen() {
 	const [role, setRole] = useState(user.role);
 
 	// ข้อมูลเฉพาะของหน้านี้
-	const { needRefresh, currentUser } = globalParams;
+	const { statusNeedRefresh, currentUser } = globalParams;
 	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
 
 	const isFocused = useIsFocused();
@@ -28,7 +28,7 @@ export default function StatusScreen() {
 
 	useEffect(() => {
 		if (isFocused) {
-			if (needRefresh) {
+			if (statusNeedRefresh) {
 				fetchReports();
 			}
 		}
@@ -38,7 +38,7 @@ export default function StatusScreen() {
 	const fetchReports = async () => {
 		const data = await getReportByUser(email);
 		if (data) setReports(data);
-		setGlobalParams(prev => ({ ...prev, needRefresh: false }));
+		setGlobalParams(prev => ({ ...prev, statusNeedRefresh: false }));
 	};
 
 	// ---------------- 2. GUI related code --------------------//

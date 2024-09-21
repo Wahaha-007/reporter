@@ -1,40 +1,101 @@
-// 1. ส่วนหัวใส่พื้นฐาน Library ที่ใช้ใน GUI ทั่วๆ ไป
+// Date : 19 Sep 24
+// Purpose : หน้า Status สำหรับ User ติดตามที่ได้รายงานไว้
+// Note   : - หน้านี้จะไม่มีการเปลี่ยน  User นะ
+
 import React, { useState, useEffect, useContext } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
 import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Card, Button, Icon } from 'react-native-elements';
 import { styles } from '../styles/theme';
+import { getReportByUser } from '../services/awsDatabase';
 
-// 2. ส่วนตัวหลักจะแบ่งเป็น 3 ส่วนคือ ส่วนที่ทำงานตามช่วงชีวิตของ Component (ไม่อยากใช้คำว่า LifeCycle เดี๋ยวไปเหมือนพวก class)
 export default function TaskScreen() {
 
-	// 2.1 พวก Trigger ตามช่วงชีวิต
-	const isFocused = useIsFocused();
+	// ข้อมูลของ Login user ปัจจุบันจาก Global Context
 	const { globalParams, setGlobalParams } = useGlobalContext();
 	const { user } = globalParams;
+	const [email, setEmail] = useState(user.email);
+	const [role, setRole] = useState(user.role);
+
+	// ข้อมูลเฉพาะของหน้านี้
+	const { needRefresh, currentUser } = globalParams;
+	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
+
+	const isFocused = useIsFocused();
+	const navigation = useNavigation();
 
 	useEffect(() => {
-		if (isFocused) { // จะเปลี่ยนตอนเข้าหรือออกก็ได้เลือกเอาอย่างนึง
-			//	ตอน set : setGlobalParams(prev => ({ ...prev, Newkey: 'NewValue' }));
-			//  ตอน use : const { user } = globalParams;
+		if (isFocused) {
+			if (needRefresh) {
+				fetchReports();
+			}
 		}
 	}, [isFocused]);
 
-	// 2.2 พวก Function (ที่ stateless)
+	// ---------------- 1. Database related code --------------------//
+	const fetchReports = async () => {
+		const data = await getReportByUser(email);
+		if (data) setReports(data);
+		setGlobalParams(prev => ({ ...prev, needRefresh: false }));
+	};
 
+	// ---------------- 2. GUI related code --------------------//
+	// Render progress status as graphical representation
+	const renderStatus = (status) => {
+		const statuses = ['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'];
+		const currentStatusIndex = statuses.indexOf(status);
 
+		return (
+			<View style={styles.statusContainer}>
+				{statuses.map((s, index) => (
+					<View key={index} style={styles.statusItem}>
+						<Icon
+							name={currentStatusIndex >= index ? 'check-circle' : 'radio-button-unchecked'}
+							size={24}
+							color={currentStatusIndex >= index ? 'green' : '#ccc'}
+						/>
+						<Text style={styles.statusText}>{s}</Text>
+					</View>
+				))}
+			</View>
+		);
+	};
 
+	function shortenString(input) {
+		if (typeof input !== 'string') {
+			return;
+		}
+		return input.length > 120 ? input.slice(0, 120) + ' ......' : input;
+	}
 
-
-
-
-
-
-	// 2.3 ส่วน GUI Render, ลบทิ้งและแทนส่วนที่ต้องการ
+	// 2.3 ส่วน GUI Render
+	// Display : Topic, Details, Submittted on, 
 	return (
-		<View style={styles.container}>
-			<Text style={styles.text}>Task Screen</Text>
-		</View>
+		<>
+			{reports.length === 0 ? (
+				<View style={styles.noDataContainer}>
+					<Text style={styles.noDataText}>- No data -</Text>
+				</View>
+			) : (
+				<ScrollView style={styles.container}>
+					{reports.map((report) => (
+						<Card key={report.report_id} containerStyle={styles.card}>
+							<View style={styles.statusSection}>
+								{renderStatus(report.status)}
+							</View>
+							<Text style={styles.topic}>{report.topic}</Text>
+							<Text
+								onPress={() => navigation.navigate('รายละเอียด', { report })}
+								style={styles.details}
+							>
+								Details: {shortenString(report.details)}
+							</Text>
+						</Card>
+					))}
+				</ScrollView>
+			)}
+		</>
 	);
-}
+};

@@ -122,7 +122,7 @@ export default function StatusDetailsScreenScreen({ route }) {
 			});
 			Alert.alert('Success', 'Report updated successfully');
 			setHasNewImage(false);
-			setGlobalParams(prev => ({ ...prev, needRefresh: true }));
+			setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true }));
 			navigation.goBack(); // Navigate back to StatusScreen
 		} catch (error) {
 			Alert.alert('Error', 'Failed to update report');
@@ -134,7 +134,7 @@ export default function StatusDetailsScreenScreen({ route }) {
 		try {
 			await deleteReport(report.report_id); // Delete the report and the image
 			Alert.alert('Success', 'Report deleted successfully');
-			setGlobalParams(prev => ({ ...prev, needRefresh: true }));
+			setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true }));
 			navigation.goBack(); // Navigate back to StatusScreen
 		} catch (error) {
 			Alert.alert('Error', 'Failed to delete report');

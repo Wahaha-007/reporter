@@ -13,7 +13,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Import M
 import { useGlobalContext } from '../context/GlobalContext';
 
 // --------------- Screen ---------------------//
-
+import LoadScreen from '../screensAuth/LoadScreen';
 import SignUpScreen from '../screensAuth/SignUpScreen';
 import SignInScreen from '../screensAuth/SignInScreen';
 import ReportScreen from '../screensUser/ReportScreen';
@@ -95,6 +95,7 @@ export default function AppNavigator() {
 			<PaperProvider theme={BlackTheme}>
 				<NavigationContainer>
 					<AuthStack.Navigator>
+						<AuthStack.Screen name="Load" component={LoadScreen} options={{ headerShown: false }} />
 						<AuthStack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: true }} />
 						<AuthStack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: true }} />
 						<AuthStack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: false }} />

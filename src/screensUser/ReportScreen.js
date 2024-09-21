@@ -50,7 +50,7 @@ export default function ReportScreen() {
 	const navigation = useNavigation();
 
 	useEffect(() => {
-		setGlobalParams(prev => ({ ...prev, needRefresh: true })); // ต้องทำเพราะตัวเองเป็นหน้าแรกของกลุ่ม ต้องบอกเพื่อน
+		setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true })); // ต้องทำเพราะตัวเองเป็นหน้าแรกของกลุ่ม ต้องบอกเพื่อน
 		setUsername(email);
 	}, []);
 
@@ -124,7 +124,7 @@ export default function ReportScreen() {
 			});
 			Alert.alert('Success', 'Report created successfully');
 			await AsyncStorage.setItem('username', username);
-			setGlobalParams(prev => ({ ...prev, currentUser: username, needRefresh: true }));
+			setGlobalParams(prev => ({ ...prev, currentUser: username, statusNeedRefresh: true }));
 			clearData();
 			navigation.navigate('สถานะ');
 

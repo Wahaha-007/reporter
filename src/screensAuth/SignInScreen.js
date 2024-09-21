@@ -6,7 +6,6 @@ import { TextInput, Button, useTheme } from 'react-native-paper';
 import { authstyles } from '../styles/theme';
 
 import { signIn } from '../services/authService';
-import * as SecureStore from 'expo-secure-store';
 import { useGlobalContext } from '../context/GlobalContext';
 
 const SignInScreen = ({ navigation }) => {
@@ -15,21 +14,6 @@ const SignInScreen = ({ navigation }) => {
 	const [error, setError] = useState('');
 	const { globalParams, setGlobalParams } = useGlobalContext();
 	const { colors } = useTheme(); // Access the theme's colors
-
-	// -- ส่วนดูดข้อมูลจาก Local Storage มาส่งให้ Main -- //
-	useEffect(() => {
-		const checkUserData = async () => {
-			const userData = await SecureStore.getItemAsync('userData');
-			if (userData) {
-				const user = JSON.parse(userData);
-
-				setGlobalParams(prev => ({ ...prev, user }));
-				navigation.replace('Main');
-			}
-		};
-
-		checkUserData();
-	}, []);
 
 	// -- ส่วนดูดข้อมูลจาก User Input มาส่งให้ Main -- //
 	const handleSignIn = async () => {

@@ -1,4 +1,8 @@
+// มีหลายแบบแยกกัน
+// style, authstyle
+
 import { StyleSheet } from 'react-native';
+import { DefaultTheme } from 'react-native-paper';
 
 export const styles = StyleSheet.create({
 	// ---------- For Report Page
@@ -132,3 +136,58 @@ export const styles = StyleSheet.create({
 		marginTop: 10,
 	},
 });
+
+
+export const authstyles = StyleSheet.create({
+	container: {
+		flex: 1,
+		justifyContent: 'center', // Center vertically
+		backgroundColor: '#000000',
+	},
+	card: {
+		backgroundColor: '#1f1f1f', // Card background
+		borderRadius: 10, // Rounded corners
+		padding: 20, // Space inside the card
+		margin: 20, // Margin around the card
+		alignSelf: 'center', // Center horizontally
+		shadowColor: '#000', // Shadow color
+		shadowOffset: { width: 0, height: 2 }, // Shadow position
+		shadowOpacity: 0.25, // Shadow opacity
+		shadowRadius: 3.84, // Shadow blur
+		elevation: 5, // For Android shadow
+		width: '90%', // Card width
+	},
+	input: {
+		height: 40,
+		borderColor: 'gray',
+		borderWidth: 1,
+		marginBottom: 12,
+		padding: 5,
+		color: 'white', // Ensures text is visible on dark background
+	},
+	title: {
+		fontSize: 24,
+		color: 'white',
+		textAlign: 'center',
+		marginBottom: 20,
+	},
+	button: {
+		marginBottom: 10,
+	},
+	errorText: {
+		color: 'red',
+		textAlign: 'center',
+		marginBottom: 10,
+	},
+});
+
+export const BlackTheme = {
+	...DefaultTheme,
+	colors: {
+		...DefaultTheme.colors,
+		primary: '#1f1f1f',
+		background: '#000000',
+		text: '#ffffff',
+		surface: '#121212',
+	},
+};

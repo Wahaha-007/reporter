@@ -5,7 +5,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { GlobalProvider } from '../context/GlobalContext';  // Context
-import { styles } from '../styles/theme';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { BlackTheme } from '../styles/theme';
 
 // --------------- Screen ---------------------//
 
@@ -32,13 +33,15 @@ function MainTabNavigator() { // เฉพาะที่ต้องการ�
 export default function AppNavigator() {
 	return (
 		<GlobalProvider>
-			<NavigationContainer>
-				<Stack.Navigator>
-					<Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: true }} />
-					<Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: true }} />
-					<Stack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: true }} />
-				</Stack.Navigator>
-			</NavigationContainer>
+			<PaperProvider theme={BlackTheme}>
+				<NavigationContainer>
+					<Stack.Navigator>
+						<Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: true }} />
+						<Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: true }} />
+						<Stack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: true }} />
+					</Stack.Navigator>
+				</NavigationContainer>
+			</PaperProvider>
 		</GlobalProvider>
 	);
 }

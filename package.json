@@ -25,6 +25,7 @@
     "expo-constants": "~16.0.2",
     "expo-image-picker": "~15.0.7",
     "expo-location": "~17.0.1",
+    "expo-secure-store": "~13.0.2",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-native": "0.74.5",
@@ -34,10 +35,10 @@
     "react-native-get-random-values": "~1.11.0",
     "react-native-maps": "1.14.0",
     "react-native-pager-view": "6.3.0",
+    "react-native-paper": "^5.12.5",
     "react-native-uuid": "^2.0.2",
     "react-native-vector-icons": "^10.2.0",
-    "uuid": "^10.0.0",
-    "expo-secure-store": "~13.0.2"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

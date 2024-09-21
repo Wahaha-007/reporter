@@ -10,6 +10,7 @@ import { GlobalProvider } from '../context/GlobalContext';  // Context
 import { Provider as PaperProvider } from 'react-native-paper';
 import { BlackTheme, styles } from '../styles/theme';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Import MaterialIcons
+import { useGlobalContext } from '../context/GlobalContext';
 
 // --------------- Screen ---------------------//
 
@@ -18,11 +19,14 @@ import SignInScreen from '../screensAuth/SignInScreen';
 import ReportScreen from '../screensUser/ReportScreen';
 import StatusScreen from '../screensUser/StatusScreen';
 import StatusDetailsScreen from '../screensUser/StatusDetailsScreen';
+import TaskScreen from '../screensWorker/TaskScreen';
+import TaskDetailsScreen from '../screensWorker/TaskDetailsScreen';
 import UserScreen from '../screensUser/UserScreen';
 
 const AuthStack = createStackNavigator(); // เรียงตามลำดับของการใช้งานจริงเลย
 const Tab = createBottomTabNavigator();
 const StatusStack = createStackNavigator();
+const TaskStack = createStackNavigator();
 
 function StatusStackNavigator() { // กลุ่มหลักของ Status pages
 	return (
@@ -33,7 +37,22 @@ function StatusStackNavigator() { // กลุ่มหลักของ Status
 	);
 }
 
+function TaskStackNavigator() { // กลุ่มหลักของ Status pages
+	return (
+		<TaskStack.Navigator>
+			<TaskStack.Screen name="Task List" component={TaskScreen} options={{ headerShown: true }} />
+			<TaskStack.Screen name="Task Details" component={TaskDetailsScreen} options={{ headerShown: true }} />
+		</TaskStack.Navigator>
+	);
+}
+
 function MainTabNavigator() {
+
+	const { globalParams, setGlobalParams } = useGlobalContext();
+	const { user } = globalParams;
+	//const [email, setEmail] = useState(user.email);
+	//const [role, setRole] = useState(user.role);
+
 	return (
 		<Tab.Navigator
 			screenOptions={({ route }) => ({
@@ -48,6 +67,8 @@ function MainTabNavigator() {
 						iconName = 'stairs'; // Material icon name for Production
 					} else if (route.name === 'บัญชี') {
 						iconName = 'person'; // Material icon name for Production
+					} else if (route.name === 'Task') {
+						iconName = 'construction'; // Material icon name for Production
 					}
 
 					return <MaterialIcons name={iconName} size={iconSize} color={iconColor} />;
@@ -57,6 +78,11 @@ function MainTabNavigator() {
 		>
 			<Tab.Screen name="รายงานปัญหา" component={ReportScreen} />
 			<Tab.Screen name="สถานะ" component={StatusStackNavigator} options={{ headerShown: false }} />
+			{
+				user?.role === 'QA-Worker' &&
+				(<Tab.Screen name="Task" component={TaskStackNavigator} />
+				) // ส่วนนี้ใช้เลือก Menu แบบ Dynamic ได้
+			}
 			<Tab.Screen name="บัญชี" component={UserScreen} />
 		</Tab.Navigator>
 	);

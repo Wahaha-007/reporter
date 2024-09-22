@@ -47,6 +47,95 @@ export const uploadImageToS3 = async (image) => {
 };
 
 // ------------------ 3. Complexed Operation -----------------------------------//
+// --- 3.1 Create
+export const createReport = async (newData) => {
+	const createdAt = new Date().toISOString();
+
+	try {
+		// 1. ถ้ามีรูปให้ Upload รูปก่อน
+		let imageUrl = null;
+		if (newData.image) {
+			const s3Response = await uploadImageToS3(newData.image);
+			imageUrl = s3Response.Location; // S3 image URL
+		}
+
+		// 2. Update DynamoDB
+		const params = {
+			TableName: 'Reports', // No need that high security
+			Item: {
+				report_id: uuid.v4(),
+				username: newData.username,
+				topic: newData.topic,
+				details: newData.details,
+				department: newData.department,
+				location: newData.location,
+				imageUrl: imageUrl,
+				status: "รายงาน",
+				createdAt,
+			},
+		};
+
+		// Store in DynamoDB
+		const result = await dynamoDb.put(params).promise();
+		return result.Attributes; // Return create report attributes
+	} catch (error) {
+		console.error('Error creating report: ', error);
+		throw new Error('Failed to create report');
+	}
+};
+
+// Need : status, table, report_id, comment, image, updater, updater_role ;			Autogen : cratedAt
+export const createUpdateReport = async (newData) => {
+	const createdAt = new Date().toISOString();
+
+	try {
+		// 1. Update record in 'Reports' Table
+		const updateParams = {
+			TableName: 'Reports',
+			Key: {
+				report_id: newData.report_id,
+			},
+			UpdateExpression: `SET #status = :status`,
+			ExpressionAttributeNames: { // เอาไว้ใส่นิยามเพื่อหลบ reserved word collision
+				'#status': 'status',
+			},
+			ExpressionAttributeValues: {
+				':status': newData.status,
+			},
+			ReturnValues: 'ALL_NEW', // Return the updated item
+		};
+		await dynamoDb.update(updateParams).promise();
+
+		// 2. Update S3 (ถ้ามีรูปให้ Upload รูปก่อน)
+		let imageUrl = null;
+		if (newData.image) {
+			const s3Response = await uploadImageToS3(newData.image);
+			imageUrl = s3Response.Location; // S3 image URL
+		}
+
+		// 3. Create new record in target Table
+		const params = {
+			TableName: newData.table, // No need that high security
+			Item: {
+				report_id: newData.report_id,
+				comment: newData.comment,
+				imageUrl: imageUrl,
+				updater: newData.updater,
+				updater_role: newData.updater_role,
+				createdAt,
+			},
+		};
+
+		// Store in DynamoDB
+		const result = await dynamoDb.put(params).promise();
+		return result.Attributes; // Return create report attributes
+	} catch (error) {
+		console.error('Error creating report: ', error);
+		throw new Error('Failed to create report');
+	}
+};
+
+// --- 3.3 Read
 export const getReportDetails = async (report_id) => {
 	const params = {
 		TableName: 'Reports',
@@ -100,42 +189,24 @@ export const getReportByDepartment = async (department) => {
 	}
 };
 
-export const createReport = async (newData) => {
-	const createdAt = new Date().toISOString();
+export const getUpdateReport = async (table, report_id) => {
+	const params = {
+		TableName: table,
+		Key: {
+			report_id: report_id,
+		},
+	};
 
 	try {
-		// 1. ถ้ามีรูปให้ Upload รูปก่อน
-		let imageUrl = null;
-		if (newData.image) {
-			const s3Response = await uploadImageToS3(newData.image);
-			imageUrl = s3Response.Location; // S3 image URL
-		}
-
-		// 2. Update DynamoDB
-		const params = {
-			TableName: 'Reports', // No need that high security
-			Item: {
-				report_id: uuid.v4(),
-				username: newData.username,
-				topic: newData.topic,
-				details: newData.details,
-				department: newData.department,
-				location: newData.location,
-				imageUrl: imageUrl,
-				status: "รายงาน",
-				createdAt,
-			},
-		};
-
-		// Store in DynamoDB
-		const result = await dynamoDb.put(params).promise();
-		return result.Attributes; // Return create report attributes
+		const data = await dynamoDb.get(params).promise();
+		return data.Item;
 	} catch (error) {
-		console.error('Error creating report: ', error);
-		throw new Error('Failed to create report');
+		console.error('Error fetching report details: ', error);
+		throw new Error('Failed to fetch report details');
 	}
 };
 
+// --- 3.4 Update
 // Function to update a report in DynamoDB and optionally update the image in S3
 export const updateReport = async (report_id, updatedData) => {
 
@@ -211,7 +282,7 @@ export const updateReport = async (report_id, updatedData) => {
 		throw new Error('Failed to update report');
 	}
 };
-
+// --- 3.5 Delete
 // Function to delete a report and its related photo from S3
 export const deleteReport = async (report_id) => {
 	// First, fetch the report to get the image URL (if any)

@@ -198,11 +198,33 @@ export const styles = StyleSheet.create({
 		borderRadius: 10,
 		borderColor: 'white',
 		borderWidth: 1,
+		marginBottom: 10
 	},
-	headerCardReceived: {
+	headerCardReport: {
 		paddingTop: 5, //ชดเชยสระบน
 		alignItems: 'center',
 		backgroundColor: '#57a1b5',
+		borderTopRightRadius: 9,
+		borderTopLeftRadius: 9,
+	},
+	headerCardAck: {
+		paddingTop: 5, //ชดเชยสระบน
+		alignItems: 'center',
+		backgroundColor: '#ba6c3c',
+		borderTopRightRadius: 9,
+		borderTopLeftRadius: 9,
+	},
+	headerCardProcessing: {
+		paddingTop: 5, //ชดเชยสระบน
+		alignItems: 'center',
+		backgroundColor: '#9c41ba',
+		borderTopRightRadius: 9,
+		borderTopLeftRadius: 9,
+	},
+	headerCardDone: {
+		paddingTop: 5, //ชดเชยสระบน
+		alignItems: 'center',
+		backgroundColor: '#398029',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
 	},
@@ -212,6 +234,10 @@ export const styles = StyleSheet.create({
 		padding: 10,
 		borderBottomRightRadius: 10,
 		borderBottomLeftRadius: 10,
+	},
+	arrowIcon: {
+		alignSelf: 'center',
+		marginVertical: 15,
 	},
 });
 

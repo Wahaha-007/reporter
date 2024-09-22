@@ -24,7 +24,7 @@ const departments = [
 	{ name: 'QA', icon: 'check-circle' },
 ];
 
-export default function StatusDetailsScreenScreen({ route }) {
+export default function StatusDetailsScreen({ route }) {
 	const isFocused = useIsFocused();
 	const { globalParams, setGlobalParams } = useGlobalContext();
 

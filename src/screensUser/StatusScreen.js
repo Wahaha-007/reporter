@@ -70,6 +70,30 @@ export default function StatusScreen() {
 		return input.length > 120 ? input.slice(0, 120) + ' ......' : input;
 	}
 
+	const formatDateString = (dateString) => {
+		const date = new Date(dateString);
+
+		const options = {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			weekday: 'long',
+			hour: 'numeric',
+			minute: 'numeric',
+			second: 'numeric',
+			hour12: false, // Set to true for 12-hour format
+		};
+
+		// Get the formatted date string
+		const formattedDate = date.toLocaleString('en-GB', options);
+
+		// Adjust the formatted string to match the desired output
+		const [datePart, timePart] = formattedDate.split(', ');
+
+		// return `${datePart} ${timePart}`;
+		return formattedDate;
+	};
+
 	// 2.3 ส่วน GUI Render
 	// Display : Topic, Details, Submittted on, 
 	return (
@@ -92,6 +116,7 @@ export default function StatusScreen() {
 							>
 								Details: {shortenString(report.details)}
 							</Text>
+							<Text style={styles.date}>{formatDateString(report.createdAt)}</Text>
 						</Card>
 					))}
 				</ScrollView>

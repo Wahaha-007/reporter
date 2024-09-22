@@ -6,10 +6,10 @@ import React, { useState, useEffect, useContext } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
 import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, FlatList, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Card, Button, Icon } from 'react-native-elements';
 import { styles } from '../styles/theme';
-import { getReportByUser } from '../services/awsDatabase';
+import { getReportByDepartment } from '../services/awsDatabase';
 
 export default function TaskScreen() {
 
@@ -20,82 +20,80 @@ export default function TaskScreen() {
 	const [role, setRole] = useState(user.role);
 
 	// ข้อมูลเฉพาะของหน้านี้
-	const { needRefresh, currentUser } = globalParams;
+	const { taskNeedRefresh, currentUser } = globalParams;
 	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
+	const [filter, setFilter] = useState('All'); // State for filtering status
 
 	const isFocused = useIsFocused();
 	const navigation = useNavigation();
 
 	useEffect(() => {
 		if (isFocused) {
-			if (needRefresh) {
-				fetchReports();
+			if (taskNeedRefresh) {
+				fetchTaskReports();
 			}
 		}
 	}, [isFocused]);
 
 	// ---------------- 1. Database related code --------------------//
-	const fetchReports = async () => {
-		const data = await getReportByUser(email);
-		if (data) setReports(data);
-		setGlobalParams(prev => ({ ...prev, needRefresh: false }));
+
+	const textBeforeDash = (text) => { // for QA-Worker ==> QA
+		const index = text.indexOf('-');
+		return index !== -1 ? text.slice(0, index).trim() : text.trim();
 	};
+
+	const fetchTaskReports = async () => {
+
+		const data = await getReportByDepartment(textBeforeDash(user.role));
+		if (data) setReports(data);
+		setGlobalParams(prev => ({ ...prev, taskNeedRefresh: false }));
+	};
+
+	const filteredReports = reports.filter(report =>
+		filter === 'All' || report.status === filter
+	);
 
 	// ---------------- 2. GUI related code --------------------//
-	// Render progress status as graphical representation
-	const renderStatus = (status) => {
-		const statuses = ['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'];
-		const currentStatusIndex = statuses.indexOf(status);
 
-		return (
-			<View style={styles.statusContainer}>
-				{statuses.map((s, index) => (
-					<View key={index} style={styles.statusItem}>
-						<Icon
-							name={currentStatusIndex >= index ? 'check-circle' : 'radio-button-unchecked'}
-							size={24}
-							color={currentStatusIndex >= index ? 'green' : '#ccc'}
-						/>
-						<Text style={styles.statusText}>{s}</Text>
-					</View>
-				))}
-			</View>
-		);
-	};
-
-	function shortenString(input) {
-		if (typeof input !== 'string') {
-			return;
-		}
-		return input.length > 120 ? input.slice(0, 120) + ' ......' : input;
+	const prenavigate = (item) => {
+		// console.log("Send:", item);
+		navigation.navigate('Task Details', { item });
 	}
 
-	// 2.3 ส่วน GUI Render
-	// Display : Topic, Details, Submittted on, 
+	// ของเก่า 		onPress={() => navigation.navigate('Task Details', { item })}>
+	// Render each report card
+	const renderReportCard = ({ item }) => (
+		<TouchableOpacity
+			style={styles.undercard}
+			onPress={() => prenavigate(item)}>
+			<Text style={styles.topic}>{item.topic}</Text>
+			<Text style={styles.details}>Status: {item.status}</Text>
+			{/* <Text>Date: {item.reportDate}</Text> */}
+		</TouchableOpacity>
+	);
+
 	return (
-		<>
-			{reports.length === 0 ? (
-				<View style={styles.noDataContainer}>
-					<Text style={styles.noDataText}>- No data -</Text>
-				</View>
-			) : (
-				<ScrollView style={styles.container}>
-					{reports.map((report) => (
-						<Card key={report.report_id} containerStyle={styles.card}>
-							<View style={styles.statusSection}>
-								{renderStatus(report.status)}
-							</View>
-							<Text style={styles.topic}>{report.topic}</Text>
-							<Text
-								onPress={() => navigation.navigate('รายละเอียด', { report })}
-								style={styles.details}
-							>
-								Details: {shortenString(report.details)}
-							</Text>
-						</Card>
-					))}
-				</ScrollView>
-			)}
-		</>
+		<View style={styles.container}>
+			{/* Filter Tabs */}
+			<View style={styles.filterContainer}>
+				{['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'].map(status => (
+					<TouchableOpacity
+						key={status}
+						style={[styles.filterButton, filter === status && styles.selectedFilter]}
+						onPress={() => setFilter(status)}>
+						<Text style={styles.details}>{status}</Text>
+					</TouchableOpacity>
+				))}
+			</View>
+
+			{/* Report List */}
+			<FlatList
+				data={filteredReports}
+				keyExtractor={(item) => item.report_id} //  เหมือนสร้างตัวแปร item มาอัตโนมัติ ให้เอาไปใช้ได้
+				renderItem={renderReportCard}
+				contentContainerStyle={styles.list}
+				ListEmptyComponent={<Text style={styles.details}>No reports found</Text>}
+			/>
+		</View>
 	);
 };

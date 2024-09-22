@@ -12,7 +12,6 @@ AWS.config.update({
 const s3 = new AWS.S3();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-
 // ------------------2. Basic Operation -----------------------------------//
 export const generatePresignedUrl = (imageUrl) => {
 	let result = null;
@@ -83,10 +82,26 @@ export const getReportByUser = async (currentUser) => {
 	}
 };
 
+export const getReportByDepartment = async (department) => {
+	const params = {
+		TableName: 'Reports',
+		IndexName: 'department-index',
+		KeyConditionExpression: 'department = :department', // assuming name exists in reports
+		ExpressionAttributeValues: {
+			':department': department,  // Replace with actual user ID
+		},
+	};
+
+	try {
+		const data = await dynamoDb.query(params).promise();
+		return data.Items;
+	} catch (error) {
+		console.error('Error fetching reports:', error);
+	}
+};
+
 export const createReport = async (newData) => {
 	const createdAt = new Date().toISOString();
-	const actionDate = [createdAt, "0", "0", "0"];
-	const actionNote = ["", "", "", ""];
 
 	try {
 		// 1. ถ้ามีรูปให้ Upload รูปก่อน
@@ -108,14 +123,12 @@ export const createReport = async (newData) => {
 				location: newData.location,
 				imageUrl: imageUrl,
 				status: "รายงาน",
-				actionNote,
-				actionDate, // 4 Dates for : submit, accept, processing, completed
+				createdAt,
 			},
 		};
 
 		// Store in DynamoDB
 		const result = await dynamoDb.put(params).promise();
-		console.log(`Report created successfully.`);
 		return result.Attributes; // Return create report attributes
 	} catch (error) {
 		console.error('Error creating report: ', error);
@@ -126,6 +139,7 @@ export const createReport = async (newData) => {
 // Function to update a report in DynamoDB and optionally update the image in S3
 export const updateReport = async (report_id, updatedData) => {
 
+	const updatedAt = new Date().toISOString();
 	const reportParams = {
 		TableName: 'Reports',
 		Key: { report_id },
@@ -172,7 +186,7 @@ export const updateReport = async (report_id, updatedData) => {
 		const updateParams = {
 			TableName: 'Reports',
 			Key: { report_id },
-			UpdateExpression: `SET #topic = :topic, details = :details, department = :department, #location = :location, imageUrl = :imageUrl`,
+			UpdateExpression: `SET #topic = :topic, details = :details, department = :department, #location = :location, imageUrl = :imageUrl, createdAt = :createdAt`,
 			ExpressionAttributeNames: { // เอาไว้ใส่นิยามเพื่อหลบ reserved word collision
 				'#topic': 'topic',
 				'#location': 'location',
@@ -183,6 +197,7 @@ export const updateReport = async (report_id, updatedData) => {
 				':department': updatedData.department,
 				':location': updatedData.location,
 				':imageUrl': newImageUrl, // Use the new or existing image URL
+				':updatedAt': updatedAt, // Use the new or existing image URL
 			},
 			ReturnValues: 'ALL_NEW', // Return the updated item
 		};
@@ -200,7 +215,6 @@ export const updateReport = async (report_id, updatedData) => {
 // Function to delete a report and its related photo from S3
 export const deleteReport = async (report_id) => {
 	// First, fetch the report to get the image URL (if any)
-	console.log("Function delete report called.");
 	const reportParams = {
 		TableName: 'Reports',
 		Key: {

@@ -80,7 +80,7 @@ function MainTabNavigator() {
 			<Tab.Screen name="สถานะ" component={StatusStackNavigator} options={{ headerShown: false }} />
 			{
 				user?.role === 'QA-Worker' &&
-				(<Tab.Screen name="Task" component={TaskStackNavigator} />
+				(<Tab.Screen name="Task" component={TaskStackNavigator} options={{ headerShown: false }} />
 				) // ส่วนนี้ใช้เลือก Menu แบบ Dynamic ได้
 			}
 			<Tab.Screen name="บัญชี" component={UserScreen} />

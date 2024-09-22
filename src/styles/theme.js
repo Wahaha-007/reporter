@@ -5,7 +5,9 @@ import { StyleSheet } from 'react-native';
 import { DefaultTheme } from 'react-native-paper';
 
 export const styles = StyleSheet.create({
-	// ---------- For Report Page
+
+	// ============== For Report Page =============
+
 	container: {
 		flex: 1,
 		backgroundColor: '#000',
@@ -89,7 +91,8 @@ export const styles = StyleSheet.create({
 		backgroundColor: '#222', // Black theme for tab bar
 		borderTopWidth: 0,
 	},
-	// -------- For Status Page
+	// ============ For Status Page ===============
+
 	card: {
 		backgroundColor: '#1c1c1e',
 		borderRadius: 10,
@@ -105,7 +108,7 @@ export const styles = StyleSheet.create({
 		marginBottom: 10,
 	},
 	date: {
-		fontSize: 14,
+		fontSize: 12,
 		color: '#777',
 		marginBottom: 10,
 	},
@@ -146,6 +149,69 @@ export const styles = StyleSheet.create({
 		fontSize: 24,
 		color: '#444',
 		textAlign: 'center',
+	},
+	// ==================== For Task Page ==================
+
+	filterContainer: {
+		flexDirection: 'row',
+		justifyContent: 'space-around',
+		width: '100%',
+	},
+	filterButton: {
+		flex: 1,
+		marginHorizontal: 5, // Space between buttons
+		paddingTop: 5, // แก้ปัญหาเรื่องสระบน
+		marginBottom: 5, // ชดเชย padding ด้านบน
+		backgroundColor: '#333333', // Dark gray background for buttons
+		borderRadius: 5,
+		alignItems: 'center', // Center text horizontally
+		justifyContent: 'center', // Center text vertically
+	},
+	selectedFilter: {
+		backgroundColor: '#007bff', // Blue background for selected filter
+	},
+	list: {
+		paddingBottom: 50,
+	},
+	undercard: {
+		backgroundColor: '#1c1c1e',
+		borderRadius: 10,
+		marginBottom: 10,
+		borderBottomColor: 'white', // Only the bottom border color
+		borderBottomWidth: 1, // Only the bottom border width
+		borderRightColor: 'white', // Only the bottom border color
+		borderRightWidth: 1, // Only the bottom border width
+		paddingHorizontal: 10,
+		paddingTop: 10,
+	},
+
+	// ==================== For Task Details Page ==================
+
+	statusdate: {
+		fontSize: 12,
+		color: '#fff',
+		marginBottom: 10,
+	},
+	outerCardContainer: {
+		margin: 0,
+		padding: 0,
+		borderRadius: 10,
+		borderColor: 'white',
+		borderWidth: 1,
+	},
+	headerCardReceived: {
+		paddingTop: 5, //ชดเชยสระบน
+		alignItems: 'center',
+		backgroundColor: '#57a1b5',
+		borderTopRightRadius: 9,
+		borderTopLeftRadius: 9,
+	},
+	innerCardContainer: {
+		flex: 1,
+		backgroundColor: '#1c1c1e',
+		padding: 10,
+		borderBottomRightRadius: 10,
+		borderBottomLeftRadius: 10,
 	},
 });
 

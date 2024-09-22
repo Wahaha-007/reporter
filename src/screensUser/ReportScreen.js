@@ -50,7 +50,11 @@ export default function ReportScreen() {
 	const navigation = useNavigation();
 
 	useEffect(() => {
-		setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true })); // ต้องทำเพราะตัวเองเป็นหน้าแรกของกลุ่ม ต้องบอกเพื่อน
+		setGlobalParams(prev => ({
+			...prev,
+			statusNeedRefresh: true,
+			taskNeedRefresh: true
+		})); // ต้องทำเพราะตัวเองเป็นหน้าแรกของกลุ่ม ต้องบอกเพื่อน
 		setUsername(email);
 	}, []);
 
@@ -123,8 +127,7 @@ export default function ReportScreen() {
 				image
 			});
 			Alert.alert('Success', 'Report created successfully');
-			await AsyncStorage.setItem('username', username);
-			setGlobalParams(prev => ({ ...prev, currentUser: username, statusNeedRefresh: true }));
+			setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true }));
 			clearData();
 			navigation.navigate('สถานะ');
 
@@ -182,7 +185,7 @@ export default function ReportScreen() {
 					</TouchableOpacity>
 				</View>
 
-				<Text style={styles.label}>สถานที่:</Text>
+				<Text style={styles.label}>ที่เกิดเหตุ:</Text>
 				<MapView
 					style={styles.map}
 					region={region}

@@ -199,6 +199,7 @@ export const getUpdateReport = async (table, report_id) => {
 
 	try {
 		const data = await dynamoDb.get(params).promise();
+		// console.log("Table:", table, " | Read:", data);
 		return data.Item;
 	} catch (error) {
 		console.error('Error fetching report details: ', error);

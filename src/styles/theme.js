@@ -210,23 +210,23 @@ export const styles = StyleSheet.create({
 	headerCardAck: {
 		paddingTop: 5, //ชดเชยสระบน
 		alignItems: 'center',
-		backgroundColor: '#ba6c3c',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
+		backgroundColor: '#ba6c3c',
 	},
 	headerCardProcessing: {
 		paddingTop: 5, //ชดเชยสระบน
 		alignItems: 'center',
-		backgroundColor: '#9c41ba',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
+		backgroundColor: '#9c41ba',
 	},
 	headerCardDone: {
 		paddingTop: 5, //ชดเชยสระบน
 		alignItems: 'center',
-		backgroundColor: '#398029',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
+		backgroundColor: '#398029',
 	},
 	innerCardContainer: {
 		flex: 1,

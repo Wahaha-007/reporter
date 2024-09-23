@@ -21,6 +21,7 @@ export default function StatusScreen() {
 	// ข้อมูลเฉพาะของหน้านี้
 	const { statusNeedRefresh, currentUser } = globalParams;
 	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
+	const [reportStat, setReportStat] = useState({});	// นับจำนวน Uniqe Status
 	const [filter, setFilter] = useState('รายงาน'); // ค่า Initial, จะเซ็ทเป็น All ก็ได้
 
 	const isFocused = useIsFocused();
@@ -37,7 +38,22 @@ export default function StatusScreen() {
 	// ---------------- 1. Database related code --------------------//
 	const fetchReports = async () => {
 		const data = await getReportByUser(email);
-		if (data) setReports(data);
+
+		if (data) {
+			setReports(data);		// 1.1 Load raw array data
+			//...................................................//
+			const statusCount = data.reduce((acc, report) => {
+				const status = report.status;
+				if (acc[status]) { // If the status already exists in the accumulator, increment its count.
+					acc[status] += 1;
+				} else {
+					acc[status] = 1;// If the status doesn't exist, set its count to 1.
+				}
+				return acc;
+			}, {});
+			//....................................................//
+			setReportStat(statusCount);// 1.2 Load stats of data 
+		}
 		setGlobalParams(prev => ({ ...prev, statusNeedRefresh: false }));
 	};
 
@@ -100,7 +116,7 @@ export default function StatusScreen() {
 						key={status}
 						style={[styles.filterButton, filter === status && styles.selectedFilter]} // Style Array แบบผสมกัน
 						onPress={() => setFilter(status)}>
-						<Text style={styles.details}>{status}</Text>
+						<Text style={styles.details}>{status} ({reportStat[status] ? reportStat[status] : 0})</Text>
 					</TouchableOpacity>
 				))}
 			</View>

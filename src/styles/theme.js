@@ -281,6 +281,12 @@ export const styles = StyleSheet.create({
 		alignSelf: 'center',
 		marginVertical: 15,
 	},
+	durationText: {
+		textAlign: 'center',
+		fontSize: 12,
+		color: '#777',
+		marginBottom: 10,
+	},
 });
 
 

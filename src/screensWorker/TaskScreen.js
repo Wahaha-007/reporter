@@ -22,6 +22,7 @@ export default function TaskScreen() {
 	// ข้อมูลเฉพาะของหน้านี้
 	const { taskNeedRefresh, currentUser } = globalParams;
 	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
+	const [reportStat, setReportStat] = useState({});	// นับจำนวน Uniqe Status
 	const [filter, setFilter] = useState('รายงาน'); // State for filtering status
 
 	const isFocused = useIsFocused();
@@ -39,7 +40,22 @@ export default function TaskScreen() {
 
 	const fetchTaskReports = async () => {
 		const data = await getReportByDepartment(textBeforeDash(user.role));
-		if (data) setReports(data);
+
+		if (data) {
+			setReports(data);		// 1.1 Load raw array data
+			//...................................................//
+			const statusCount = data.reduce((acc, report) => {
+				const status = report.status;
+				if (acc[status]) { // If the status already exists in the accumulator, increment its count.
+					acc[status] += 1;
+				} else {
+					acc[status] = 1;// If the status doesn't exist, set its count to 1.
+				}
+				return acc;
+			}, {});
+			//....................................................//
+			setReportStat(statusCount);// 1.2 Load stats of data 
+		}
 		setGlobalParams(prev => ({ ...prev, taskNeedRefresh: false }));
 	};
 
@@ -106,7 +122,7 @@ export default function TaskScreen() {
 						key={status}
 						style={[styles.filterButton, filter === status && styles.selectedFilter]}
 						onPress={() => setFilter(status)}>
-						<Text style={styles.details}>{status}</Text>
+						<Text style={styles.details}>{status} ({reportStat[status] ? reportStat[status] : 0})</Text>
 					</TouchableOpacity>
 				))}
 			</View>

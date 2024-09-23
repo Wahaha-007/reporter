@@ -69,7 +69,7 @@ export default function TaskDetailsScreen({ route }) {
 			}
 		}
 	}, [isFocused]);
-	// ---------------- 1. Database related code --------------------//
+	// ---------------- 1. Database read code --------------------//
 
 	const fetchUpdateReport = async (index, statusName) => {
 		const data = await getUpdateReport(dataTable[statusName], report.report_id);
@@ -167,7 +167,31 @@ export default function TaskDetailsScreen({ route }) {
 		return formattedDate;
 	};
 
-	// ---------------- 3. DB related code --------------------//
+	const getDifferenceInDaysAndHours = (dateString1, dateString2) => {
+		// Convert date strings to Date objects
+		const date1 = new Date(dateString1);
+		const date2 = new Date(dateString2);
+
+		// Get the difference in milliseconds
+		const diffInMs = Math.abs(date2 - date1);
+
+		// Convert the difference from milliseconds to days and hours
+		const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)); // Convert ms to days
+		const remainingMs = diffInMs % (1000 * 60 * 60 * 24); // Remainder after extracting days
+		const diffInHours = Math.floor(remainingMs / (1000 * 60 * 60)); // Convert remainder to hours
+
+		// Return the result in the format 'xx days, yy hours'
+		return `${diffInDays} days, ${diffInHours} hours`;
+	};
+
+	// Example usage
+	//const dateString1 = '2024-09-23T10:00:00';  // Example date string 1
+	//const dateString2 = '2024-09-25T15:30:00';  // Example date string 2
+
+	//console.log(getDifferenceInDaysAndHours(dateString1, dateString2));
+	// Output: "2 days, 5 hours"
+
+	// ---------------- 3. Database write code --------------------//
 
 	const handleSubmitUpdate = async (status, table, newComment, newImage) => {
 		try {
@@ -223,10 +247,14 @@ export default function TaskDetailsScreen({ route }) {
 				EditableStatus.map((item, index) => (
 					<View key={item}>
 						<MaterialIcons name="arrow-downward" size={40} color="#fff" style={styles.arrowIcon} />
+						<Text style={styles.durationText}>
+							{index == 0 ? getDifferenceInDaysAndHours(report.createdAt, createdAt[index]) :
+								getDifferenceInDaysAndHours(createdAt[index - 1], createdAt[index])}
+						</Text>
 						<View style={styles.outerCardContainer}>
 							<View style={index === 0 ? styles.headerCardAck : index === 1 ? styles.headerCardProcessing : styles.headerCardDone}>
 								<Text style={styles.statusLabel}>สถานะ: {item}</Text>
-								<Text style={styles.statusdate}>{createdAt[index]}</Text>
+								<Text style={styles.statusdate}>{createdAt[index] ? formatDateString(createdAt[index]) : ''}</Text>
 							</View>
 							<View style={styles.innerCardContainer}>
 								<Text style={styles.label}>ข้อความ:</Text>

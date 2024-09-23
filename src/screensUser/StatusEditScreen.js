@@ -1,9 +1,9 @@
-// Date : 18 Sep 24
-// Purpose : หน้า  Report ปัญหาเข้า Center คล้ายๆ Traffy Fondu
+// Date : 20 Sep 24
+// Purpose : หน้าที่ Copy มาจากหน้า  Report ปัญหาหลักแต่ว่ามี Pre-populate Data
 
 import React, { useState, useEffect } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
-import { useNavigation } from '@react-navigation/native'; // View
+import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../styles/theme';
 import { View, Text, TextInput, TouchableOpacity, Button, Image, StyleSheet, ScrollView, Alert } from 'react-native';
@@ -14,7 +14,7 @@ import MapView, { Marker } from 'react-native-maps';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Import MaterialIcons
 import PagerView from 'react-native-pager-view';
 
-import { createReport } from '../services/awsDatabase';
+import { generatePresignedUrl, deleteReport, updateReport } from '../services/awsDatabase';
 
 const departments = [
 	{ name: 'HR', icon: 'people' },
@@ -25,24 +25,25 @@ const departments = [
 	{ name: 'QA', icon: 'check-circle' },
 ];
 
-export default function ReportScreen() {
-
-	// ข้อมูลของ Login user ปัจจุบันจาก Global Context
+export default function StatusEditScreen({ route }) {
+	const isFocused = useIsFocused();
 	const { globalParams, setGlobalParams } = useGlobalContext();
-	const { user } = globalParams;
-	const [email, setEmail] = useState(user.email);
-	const [role, setRole] = useState(user.role);
 
-	// ข้อมูลของแบบฟอร์ม
-	const [username, setUsername] = useState('');
-	const [topic, setTopic] = useState('');
-	const [details, setDetails] = useState('');
-	const [image, setImage] = useState(null);
-	const [departmentIndex, setDepartmentIndex] = useState(0);
-	const [location, setLocation] = useState(null);
+	const { item } = route.params;	// ตัวแปรหลักที่ส่งมาจากหน้าก่อน
+	const report = item;
+	const [topic, setTopic] = useState(report.topic);
+	const [details, setDetails] = useState(report.details);
+	const [image, setImage] = useState(report.imageUrl);
+	const [hasNewImage, setHasNewImage] = useState(false);
+
+	const [departmentIndex, setDepartmentIndex] = useState(
+		departments.findIndex((d) => d.name === report.department)
+	);
+
+	const [location, setLocation] = useState(report.location);
 	const [region, setRegion] = useState({
-		latitude: 13.73125,
-		longitude: 100.54149,
+		latitude: report.location.latitude,
+		longitude: report.location.longitude,
 		latitudeDelta: 0.01,
 		longitudeDelta: 0.01,
 	});
@@ -50,13 +51,16 @@ export default function ReportScreen() {
 	const navigation = useNavigation();
 
 	useEffect(() => {
-		setGlobalParams(prev => ({
-			...prev,
-			statusNeedRefresh: true,
-			taskNeedRefresh: true
-		})); // ต้องทำเพราะตัวเองเป็นหน้าแรกของกลุ่ม ต้องบอกเพื่อน
-		setUsername(email);
-	}, []);
+
+		const ps_url = generatePresignedUrl(report.imageUrl);
+		setImage(ps_url);
+		setHasNewImage(false);
+
+	}, [report.imageUrl]);
+
+
+	// ณ ตอนนี้เรามี Prefilled Data พร้อมแสดงผลให้ User ดูแล้ว, 
+	// ต่อไปจะเป็น Function ที่ใช้ป้อนค่าใหม่ เหมือนในหน้า Report
 
 	// ---------------- 1. GUI related code --------------------//
 	const pickImage = async () => {
@@ -69,6 +73,7 @@ export default function ReportScreen() {
 
 		if (!result.canceled) {
 			setImage(result.assets[0].uri);
+			setHasNewImage(true);
 		}
 	};
 
@@ -81,6 +86,7 @@ export default function ReportScreen() {
 
 		if (!result.canceled) {
 			setImage(result.assets[0].uri);
+			setHasNewImage(true);
 		}
 	};
 
@@ -107,53 +113,63 @@ export default function ReportScreen() {
 
 	// ---------------- 2. Upload related code --------------------//
 
-	const clearData = () => {
-		setUsername('');
-		setTopic('');
-		setDetails('');
-		setImage(null);
-		setLocation(null);
-		setDepartmentIndex(0);
-	};
-
-	const handleSubmit = async () => {
+	const handleUpdate = async () => {
 		try {
-			await createReport({
-				username,
+			await updateReport(report.report_id, {
 				topic,
 				details,
 				department: departments[departmentIndex].name,
 				location,
-				image
+				newImage: hasNewImage ? image : null, // Only upload new image if changed
 			});
-			Alert.alert('Success', 'Report created successfully');
+			Alert.alert('Success', 'Report updated successfully');
+			setHasNewImage(false);
 			setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true }));
-			clearData();
-			navigation.navigate('StatusStack');
-
+			navigation.goBack(); // Navigate back to StatusScreen
 		} catch (error) {
-			console.error('Error submitting report:', error);
 			Alert.alert('Error', 'Failed to update report');
 		}
-	}
+	};
+
+	// Delete Report function
+	const handleDelete = async () => {
+		try {
+			await deleteReport(report.report_id); // Delete the report and the image
+			Alert.alert('Success', 'Report deleted successfully');
+			setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true }));
+			navigation.goBack(); // Navigate back to StatusScreen
+		} catch (error) {
+			Alert.alert('Error', 'Failed to delete report');
+		}
+	};
+
+	const renderStatus = (status) => {
+		const statuses = ['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'];
+		const currentStatusIndex = statuses.indexOf(status);
+
+		return (
+			<View style={styles.statusContainer}>
+				{statuses.map((s, index) => (
+					<View key={index} style={styles.statusItem}>
+						<Icon
+							name={currentStatusIndex >= index ? 'check-circle' : 'radio-button-unchecked'}
+							size={24}
+							color={currentStatusIndex >= index ? 'green' : '#ccc'}
+						/>
+						<Text style={styles.statusText}>{s}</Text>
+					</View>
+				))}
+			</View>
+		);
+	};
 
 	return (
 
 		<ScrollView style={styles.container}>
 			<View style={styles.innerContainer}>
-				<Text style={styles.label}>ผู้ส่ง:</Text>
-				<View style={styles.inputContainer}>
-					<TextInput
-						style={styles.input}
-						placeholder="Enter your name"
-						placeholderTextColor="#999"
-						value={username}
-						// onChangeText={setUsername}
-						editable={false}
-					/>
-					<TouchableOpacity>
-						<Icon name="mic" size={24} color="white" />
-					</TouchableOpacity>
+				<View style={styles.statusSection}>
+					{/* <Text style={styles.statusLabel}>Status:</Text> */}
+					{renderStatus(report.status)}
 				</View>
 
 				<Text style={styles.label}>หัวข้อ:</Text>
@@ -213,7 +229,7 @@ export default function ReportScreen() {
 				<Text style={styles.label}>หน่วยงาน:</Text>
 				<PagerView
 					style={styles.pagerView}
-					initialPage={0}
+					initialPage={departmentIndex}
 					onPageSelected={handlePageSelected}
 				>
 					{departments.map((dept, index) => (
@@ -223,11 +239,16 @@ export default function ReportScreen() {
 						</View>
 					))}
 				</PagerView>
-
-				<TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-					<Text style={styles.submitButtonText}>ส่งรายงาน</Text>
+				<TouchableOpacity style={styles.blueButton} onPress={handleUpdate}>
+					<MaterialIcons name={'edit'} size={24} color={'white'} />
+					<Text style={styles.details}>ส่งรายงานใหม่</Text>
+				</TouchableOpacity>
+				<TouchableOpacity style={styles.redButton} onPress={handleDelete}>
+					<MaterialIcons name={'delete'} size={24} color={'white'} />
+					<Text style={styles.details}>ลบทิ้ง</Text>
 				</TouchableOpacity>
 			</View>
 		</ScrollView>
 	);
 };
+

@@ -2,12 +2,11 @@
 // Purpose : หน้า Status สำหรับ User ติดตามที่ได้รายงานไว้
 // Note   : - หน้านี้จะไม่มีการเปลี่ยน  User นะ
 
-import React, { useState, useEffect, useContext } from 'react'; // System
+import React, { useState, useEffect } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
 import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Card, Button, Icon } from 'react-native-elements';
+import { View, FlatList, Text, TouchableOpacity } from 'react-native';
 import { styles } from '../styles/theme';
 import { getReportByUser } from '../services/awsDatabase';
 
@@ -22,6 +21,7 @@ export default function StatusScreen() {
 	// ข้อมูลเฉพาะของหน้านี้
 	const { statusNeedRefresh, currentUser } = globalParams;
 	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
+	const [filter, setFilter] = useState('รายงาน'); // ค่า Initial, จะเซ็ทเป็น All ก็ได้
 
 	const isFocused = useIsFocused();
 	const navigation = useNavigation();
@@ -41,29 +41,13 @@ export default function StatusScreen() {
 		setGlobalParams(prev => ({ ...prev, statusNeedRefresh: false }));
 	};
 
-	// ---------------- 2. GUI related code --------------------//
-	// Render progress status as graphical representation
-	const renderStatus = (status) => {
-		const statuses = ['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'];
-		const currentStatusIndex = statuses.indexOf(status);
+	const filteredReports = reports.filter(report =>
+		filter === 'All' || report.status === filter
+	);
 
-		return (
-			<View style={styles.statusContainer}>
-				{statuses.map((s, index) => (
-					<View key={index} style={styles.statusItem}>
-						<Icon
-							name={currentStatusIndex >= index ? 'check-circle' : 'radio-button-unchecked'}
-							size={24}
-							color={currentStatusIndex >= index ? 'green' : '#ccc'}
-						/>
-						<Text style={styles.statusText}>{s}</Text>
-					</View>
-				))}
-			</View>
-		);
-	};
+	// ---------------- 2. GUI Helper function --------------------//
 
-	function shortenString(input) {
+	const shortenString = (input) => {
 		if (typeof input !== 'string') {
 			return;
 		}
@@ -72,7 +56,6 @@ export default function StatusScreen() {
 
 	const formatDateString = (dateString) => {
 		const date = new Date(dateString);
-
 		const options = {
 			year: 'numeric',
 			month: '2-digit',
@@ -83,44 +66,84 @@ export default function StatusScreen() {
 			second: 'numeric',
 			hour12: false, // Set to true for 12-hour format
 		};
-
-		// Get the formatted date string
 		const formattedDate = date.toLocaleString('en-GB', options);
-
-		// Adjust the formatted string to match the desired output
 		const [datePart, timePart] = formattedDate.split(', ');
-
 		// return `${datePart} ${timePart}`;
 		return formattedDate;
 	};
 
-	// 2.3 ส่วน GUI Render
-	// Display : Topic, Details, Submittted on, 
+	// ---------------- 3. GUI related code --------------------//
+
+	const prenavigate = (item) => {
+		if (item.status === 'รายงาน') {
+			navigation.navigate('Status Edit', { item });
+		} else {
+			navigation.navigate('Status Details', { item });
+		}
+	}
+
+	// ของเก่า 		onPress={() => navigation.navigate('Task Details', { item })}>
+	const renderReportCard = ({ item }) => (
+		<TouchableOpacity style={styles.card} onPress={() => prenavigate(item)}>
+			<Text style={styles.topic}>{item.topic}</Text>
+			<Text style={styles.details}>{shortenString(item.details)}</Text>
+			<Text style={styles.date}>{formatDateString(item.createdAt)}</Text>
+		</TouchableOpacity>
+	);
+
 	return (
-		<>
-			{reports.length === 0 ? (
-				<View style={styles.noDataContainer}>
-					<Text style={styles.noDataText}>- No data -</Text>
-				</View>
-			) : (
-				<ScrollView style={styles.container}>
-					{reports.map((report) => (
-						<Card key={report.report_id} containerStyle={styles.card}>
-							<View style={styles.statusSection}>
-								{renderStatus(report.status)}
-							</View>
-							<Text style={styles.topic}>{report.topic}</Text>
-							<Text
-								onPress={() => navigation.navigate('รายละเอียด', { report })}
-								style={styles.details}
-							>
-								Details: {shortenString(report.details)}
-							</Text>
-							<Text style={styles.date}>{formatDateString(report.createdAt)}</Text>
-						</Card>
-					))}
-				</ScrollView>
-			)}
-		</>
+		<View style={styles.container}>
+			{/* Filter Tabs */}
+			<View style={styles.filterContainer}>
+				{['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'].map(status => (
+					<TouchableOpacity
+						key={status}
+						style={[styles.filterButton, filter === status && styles.selectedFilter]} // Style Array แบบผสมกัน
+						onPress={() => setFilter(status)}>
+						<Text style={styles.details}>{status}</Text>
+					</TouchableOpacity>
+				))}
+			</View>
+
+			{/* Report List */}
+			<FlatList
+				data={filteredReports}
+				keyExtractor={(item) => item.report_id} //  เหมือนสร้างตัวแปร item มาอัตโนมัติ ให้เอาไปใช้ได้
+				renderItem={renderReportCard}
+				contentContainerStyle={styles.list}
+				ListEmptyComponent={<Text style={styles.noDataText}>ไม่พบข้อมูล</Text>}
+			/>
+		</View>
 	);
 };
+
+// 2.3 ส่วน GUI Render
+// Display : Topic, Details, Submittted on,
+// 	return (
+// 		<>
+// 			{reports.length === 0 ? (
+// 				<View style={styles.noDataContainer}>
+// 					<Text style={styles.noDataText}>- No data -</Text>
+// 				</View>
+// 			) : (
+// 				<ScrollView style={styles.container}>
+// 					{reports.map((report) => (
+// 						<Card key={report.report_id} containerStyle={styles.card}>
+// 							<View style={styles.statusSection}>
+// 								{renderStatus(report.status)}
+// 							</View>
+// 							<Text style={styles.topic}>{report.topic}</Text>
+// 							<Text
+// 								onPress={() => toMoreDetails(report)}
+// 								style={styles.details}
+// 							>
+// 								Details: {shortenString(report.details)}
+// 							</Text>
+// 							<Text style={styles.date}>{formatDateString(report.createdAt)}</Text>
+// 						</Card>
+// 					))}
+// 				</ScrollView>
+// 			)}
+// 		</>
+// 	);
+// };

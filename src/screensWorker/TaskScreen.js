@@ -2,14 +2,14 @@
 // Purpose : หน้า Status สำหรับ User ติดตามที่ได้รายงานไว้
 // Note   : - หน้านี้จะไม่มีการเปลี่ยน  User นะ
 
-import React, { useState, useEffect, useContext } from 'react'; // System
+import React, { useState, useEffect } from 'react'; // System
 import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
 import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
 
-import { View, FlatList, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Card, Button, Icon } from 'react-native-elements';
+import { View, FlatList, Text, TouchableOpacity } from 'react-native';
 import { styles } from '../styles/theme';
 import { getReportByDepartment } from '../services/awsDatabase';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Import MaterialIcons
 
 export default function TaskScreen() {
 
@@ -22,7 +22,7 @@ export default function TaskScreen() {
 	// ข้อมูลเฉพาะของหน้านี้
 	const { taskNeedRefresh, currentUser } = globalParams;
 	const [reports, setReports] = useState([]);	// สิ่งหลักในหน้านี้
-	const [filter, setFilter] = useState('All'); // State for filtering status
+	const [filter, setFilter] = useState('รายงาน'); // State for filtering status
 
 	const isFocused = useIsFocused();
 	const navigation = useNavigation();
@@ -37,13 +37,7 @@ export default function TaskScreen() {
 
 	// ---------------- 1. Database related code --------------------//
 
-	const textBeforeDash = (text) => { // for QA-Worker ==> QA
-		const index = text.indexOf('-');
-		return index !== -1 ? text.slice(0, index).trim() : text.trim();
-	};
-
 	const fetchTaskReports = async () => {
-
 		const data = await getReportByDepartment(textBeforeDash(user.role));
 		if (data) setReports(data);
 		setGlobalParams(prev => ({ ...prev, taskNeedRefresh: false }));
@@ -53,22 +47,53 @@ export default function TaskScreen() {
 		filter === 'All' || report.status === filter
 	);
 
-	// ---------------- 2. GUI related code --------------------//
+	// ---------------- 2. GUI Helper function --------------------//
+
+	const textBeforeDash = (text) => { // for QA-Worker ==> QA
+		const index = text.indexOf('-');
+		return index !== -1 ? text.slice(0, index).trim() : text.trim();
+	};
+
+	const shortenString = (input) => {
+		if (typeof input !== 'string') {
+			return;
+		}
+		return input.length > 120 ? input.slice(0, 120) + ' ......' : input;
+	}
+
+	const formatDateString = (dateString) => {
+		const date = new Date(dateString);
+		const options = {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			weekday: 'long',
+			hour: 'numeric',
+			minute: 'numeric',
+			second: 'numeric',
+			hour12: false, // Set to true for 12-hour format
+		};
+		const formattedDate = date.toLocaleString('en-GB', options);
+		const [datePart, timePart] = formattedDate.split(', ');
+		// return `${datePart} ${timePart}`;
+		return formattedDate;
+	};
+
+	// ---------------- 3. GUI related code --------------------//
 
 	const prenavigate = (item) => {
-		// console.log("Send:", item);
 		navigation.navigate('Task Details', { item });
 	}
 
 	// ของเก่า 		onPress={() => navigation.navigate('Task Details', { item })}>
-	// Render each report card
 	const renderReportCard = ({ item }) => (
-		<TouchableOpacity
-			style={styles.undercard}
-			onPress={() => prenavigate(item)}>
-			<Text style={styles.topic}>{item.topic}</Text>
-			<Text style={styles.details}>Status: {item.status}</Text>
-			{/* <Text>Date: {item.reportDate}</Text> */}
+		<TouchableOpacity style={styles.taskCard} onPress={() => prenavigate(item)}>
+			<View style={styles.taskContent}>
+				<Text style={styles.topic}>{item.topic}</Text>
+				<Text style={styles.details}>{shortenString(item.details)}</Text>
+				<Text style={styles.date}>{formatDateString(item.createdAt)}</Text>
+			</View>
+			<MaterialIcons name={'healing'} size={40} color={'white'} style={styles.taskIcon} />
 		</TouchableOpacity>
 	);
 
@@ -92,7 +117,7 @@ export default function TaskScreen() {
 				keyExtractor={(item) => item.report_id} //  เหมือนสร้างตัวแปร item มาอัตโนมัติ ให้เอาไปใช้ได้
 				renderItem={renderReportCard}
 				contentContainerStyle={styles.list}
-				ListEmptyComponent={<Text style={styles.details}>No reports found</Text>}
+				ListEmptyComponent={<Text style={styles.noDataText}>ไม่พบข้อมูล</Text>}
 			/>
 		</View>
 	);

@@ -1,245 +1,186 @@
-// Date : 20 Sep 24
-// Purpose : หน้าที่ Copy มาจากหน้า  Report ปัญหาหลักแต่ว่ามี Pre-populate Data
+// Date : 23 Sep 24
+// อันนี้ copy มาจากหน้า TaskDeatilsScreen ที่ทำเมื่อวาน
 
-import React, { useState, useEffect } from 'react'; // System
-import { useGlobalContext } from '../context/GlobalContext'; // ในนี้เราใส่ Global contaxt แบบ Simple มาให้ด้วยเลย
-import { useNavigation, useIsFocused } from '@react-navigation/native'; // View
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { styles } from '../styles/theme';
-import { View, Text, TextInput, TouchableOpacity, Button, Image, StyleSheet, ScrollView, Alert } from 'react-native';
-
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
+import React, { useState, useEffect } from 'react';
+import { useGlobalContext } from '../context/GlobalContext';
+import { View, Text, Button, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Alert } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import PagerView from 'react-native-pager-view';
-
-import { generatePresignedUrl, deleteReport, updateReport } from '../services/awsDatabase';
-
-const departments = [
-	{ name: 'HR', icon: 'people' },
-	{ name: 'Facility', icon: 'business' },
-	{ name: 'Production', icon: 'factory' },
-	{ name: 'Maintenance', icon: 'build' },
-	{ name: 'Finance', icon: 'attach-money' },
-	{ name: 'QA', icon: 'check-circle' },
-];
+import * as ImagePicker from 'expo-image-picker';
+import { styles } from '../styles/theme';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { generatePresignedUrl, createUpdateReport, getUpdateReport } from '../services/awsDatabase';
+import { MaterialIcons } from '@expo/vector-icons'; // For arrow icon
 
 export default function StatusDetailsScreen({ route }) {
-	const isFocused = useIsFocused();
+	const isFocused = useIsFocused(); // Global Data
 	const { globalParams, setGlobalParams } = useGlobalContext();
+	const { user } = globalParams;
 
-	const { report } = route.params; // ตัวแปรหลักที่ส่งมาจากหน้าก่อน
-	const [topic, setTopic] = useState(report.topic);
-	const [details, setDetails] = useState(report.details);
-	const [image, setImage] = useState(report.imageUrl);
-	const [hasNewImage, setHasNewImage] = useState(false);
-
-	const [departmentIndex, setDepartmentIndex] = useState(
-		departments.findIndex((d) => d.name === report.department)
-	);
-
-	const [location, setLocation] = useState(report.location);
-	const [region, setRegion] = useState({
+	const { item } = route.params;
+	const report = item;
+	const navigation = useNavigation();
+	const [image, setImage] = useState('');
+	const region = { // Set region for MapView
 		latitude: report.location.latitude,
 		longitude: report.location.longitude,
-		latitudeDelta: 0.01,
-		longitudeDelta: 0.01,
-	});
+		latitudeDelta: 0.005,
+		longitudeDelta: 0.005,
+	};
 
-	const navigation = useNavigation();
+	const [comment, setComment] = useState(['', '', '']); // Data for Step 2,3,4 (if applicable)
+	const [imageUrl, setImageUrl] = useState([null, null, null]);
+	const [createdAt, setCreatedAt] = useState(['', '', '']);
+	const [updater, setUpdater] = useState(['', '', '']);
+	const [updater_role, setUpdater_role] = useState(['', '', '']);
+
+	const possibleStatus = ['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'];
+	const indexNextStatus = possibleStatus.indexOf(report.status);
+	// เช่น ล่าสุด report.status เป็น 'รับเรื่อง' จะได้ 1  ค่าที่เป็นไปได้ คือ 1 , 2, 3 ,4
+
+	const allStatus = indexNextStatus !== -1 ? possibleStatus.slice(0, indexNextStatus + 1) : [];
+	// เช่น ['รายงาน', 'รับเรื่อง' ]
+
+	const EditableStatus = allStatus.slice(1);
+	// เช่น ['รับเรื่อง']
+
+	const dataTable = {
+		'รับเรื่อง': 'ReportAck',
+		'กำลังทำ': 'ReportProcessing',
+		'จบ': 'ReportDone'
+	}
 
 	useEffect(() => {
-
 		const ps_url = generatePresignedUrl(report.imageUrl);
 		setImage(ps_url);
-		setHasNewImage(false);
-
 	}, [report.imageUrl]);
 
+	useEffect(() => {
+		if (isFocused) { // จะเปลี่ยนตอนเข้าหรือออกก็ได้เลือกเอาอย่างนึง
+			if (report.status === 'รับเรื่อง') {
+				fetchUpdateReport(0, 'รับเรื่อง');
+			} else if (report.status === 'กำลังทำ') {
+				fetchUpdateReport(0, 'รับเรื่อง');
+				fetchUpdateReport(1, 'กำลังทำ');
+			} else if (report.status === 'จบ') {
+				fetchUpdateReport(0, 'รับเรื่อง');
+				fetchUpdateReport(1, 'กำลังทำ');
+				fetchUpdateReport(2, 'จบ');
+			}
+		}
+	}, [isFocused]);
+	// ---------------- 1. Database related code --------------------//
 
-	// ณ ตอนนี้เรามี Prefilled Data พร้อมแสดงผลให้ User ดูแล้ว, 
-	// ต่อไปจะเป็น Function ที่ใช้ป้อนค่าใหม่ เหมือนในหน้า Report
+	const fetchUpdateReport = async (index, statusName) => {
+		const data = await getUpdateReport(dataTable[statusName], report.report_id);
+		if (data) {
+			updateComment(index, data.comment);
+			updateImageUrl(index, generatePresignedUrl(data.imageUrl));
+			updateCreatedAt(index, data.createdAt)
+			updateUpdater(index, data.updater);
+			updateUpdater_role(index, data.updater_role);
+		}
+	};
 
-	// ---------------- 1. GUI related code --------------------//
-	const pickImage = async () => {
-		let result = await ImagePicker.launchImageLibraryAsync({
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
-			allowsEditing: true,
-			aspect: [4, 3],
-			quality: 1,
+	// ---------------- 2. GUI related code --------------------//
+
+	const updateComment = (index, value) => {
+		setComment((prev) => {
+			const newComment = [...prev];
+			newComment[index] = value;
+			return newComment;
 		});
-
-		if (!result.canceled) {
-			setImage(result.assets[0].uri);
-			setHasNewImage(true);
-		}
 	};
 
-	const takePhoto = async () => {
-		let result = await ImagePicker.launchCameraAsync({
-			allowsEditing: true,
-			aspect: [4, 3],
-			quality: 0.5,
+	const updateImageUrl = (index, value) => {
+		setImageUrl((prev) => {
+			const newImageUrl = [...prev];
+			newImageUrl[index] = value;
+			return newImageUrl;
 		});
-
-		if (!result.canceled) {
-			setImage(result.assets[0].uri);
-			setHasNewImage(true);
-		}
 	};
 
-	const handlePageSelected = (e) => {
-		setDepartmentIndex(e.nativeEvent.position);  // Update the selected department based on swipe
-	};
-
-	const getLocation = async () => {
-		let { status } = await Location.requestForegroundPermissionsAsync();
-		if (status !== 'granted') {
-			Alert.alert('Permission denied', 'Permission to access location was denied');
-			return;
-		}
-
-		let location = await Location.getCurrentPositionAsync({});
-		setRegion({
-			latitude: location.coords.latitude,
-			longitude: location.coords.longitude,
-			latitudeDelta: 0.005,
-			longitudeDelta: 0.005,
+	const updateCreatedAt = (index, value) => {
+		setCreatedAt((prev) => {
+			const newCreatedAt = [...prev];
+			newCreatedAt[index] = value;
+			return newCreatedAt;
 		});
-		setLocation(location.coords);
 	};
 
-	// ---------------- 2. Upload related code --------------------//
-
-	const handleUpdate = async () => {
-		try {
-			await updateReport(report.report_id, {
-				topic,
-				details,
-				department: departments[departmentIndex].name,
-				location,
-				newImage: hasNewImage ? image : null, // Only upload new image if changed
-			});
-			Alert.alert('Success', 'Report updated successfully');
-			setHasNewImage(false);
-			setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true }));
-			navigation.goBack(); // Navigate back to StatusScreen
-		} catch (error) {
-			Alert.alert('Error', 'Failed to update report');
-		}
+	const updateUpdater = (index, value) => {
+		setUpdater((prev) => {
+			const newUpdater = [...prev];
+			newUpdater[index] = value;
+			return newUpdater;
+		});
 	};
 
-	// Delete Report function
-	const handleDelete = async () => {
-		try {
-			await deleteReport(report.report_id); // Delete the report and the image
-			Alert.alert('Success', 'Report deleted successfully');
-			setGlobalParams(prev => ({ ...prev, statusNeedRefresh: true }));
-			navigation.goBack(); // Navigate back to StatusScreen
-		} catch (error) {
-			Alert.alert('Error', 'Failed to delete report');
-		}
-	};
-
-	const renderStatus = (status) => {
-		const statuses = ['รายงาน', 'รับเรื่อง', 'กำลังทำ', 'จบ'];
-		const currentStatusIndex = statuses.indexOf(status);
-
-		return (
-			<View style={styles.statusContainer}>
-				{statuses.map((s, index) => (
-					<View key={index} style={styles.statusItem}>
-						<Icon
-							name={currentStatusIndex >= index ? 'check-circle' : 'radio-button-unchecked'}
-							size={24}
-							color={currentStatusIndex >= index ? 'green' : '#ccc'}
-						/>
-						<Text style={styles.statusText}>{s}</Text>
-					</View>
-				))}
-			</View>
-		);
+	const updateUpdater_role = (index, value) => {
+		setUpdater_role((prev) => {
+			const newUpdater_role = [...prev];
+			newUpdater_role[index] = value;
+			return newUpdater_role;
+		});
 	};
 
 	return (
-
 		<ScrollView style={styles.container}>
-			<View style={styles.innerContainer}>
-
-				<View style={styles.statusSection}>
-					{/* <Text style={styles.statusLabel}>Status:</Text> */}
-					{renderStatus(report.status)}
+			{/* --------------  Section 1: Display current report data ---------- */}
+			<View style={styles.outerCardContainer}>
+				<View style={styles.headerCardReport}>
+					<Text style={styles.statusLabel}>สถานะ: รายงาน</Text>
+					<Text style={styles.statusdate}>{report.updatedAt ? report.updatedAt : report.createdAt}</Text>
 				</View>
-
-				<Text style={styles.label}>หัวข้อ:</Text>
-				<View style={styles.inputContainer}>
-					<TextInput
-						style={styles.input}
-						placeholder="Enter topic"
-						placeholderTextColor="#999"
-						value={topic}
-						onChangeText={setTopic}
-					/>
-					<TouchableOpacity>
-						<Icon name="mic" size={24} color="white" />
-					</TouchableOpacity>
-				</View>
-
-				<Text style={styles.label}>เนื้อหา:</Text>
-				<View style={styles.inputContainer}>
-					<TextInput
-						style={styles.input}
-						placeholder="Enter details"
-						placeholderTextColor="#999"
-						value={details}
-						onChangeText={setDetails}
-						multiline
-					/>
-					<TouchableOpacity>
-						<Icon name="mic" size={24} color="white" />
-					</TouchableOpacity>
-				</View>
-
-				<Text style={styles.label}>สถานที่:</Text>
-				<MapView
-					style={styles.map}
-					region={region}
-					onPress={(e) => setLocation(e.nativeEvent.coordinate)}
-				>
-					{location && <Marker coordinate={location} />}
-				</MapView>
-				<Button title="Get Current Location" onPress={getLocation} color="#444" />
-
-				<Text style={styles.label}>รูป:</Text>
-				<View style={styles.imageContainer}>
-					{image && <Image source={{ uri: image }} style={styles.image} />}
-					<View style={styles.buttonContainer}>
-						<Button title="Take Photo" onPress={takePhoto} color="#444" />
-						<Button title="Pick from Library" onPress={pickImage} color="#444" />
+				<View style={styles.innerCardContainer}>
+					<Text style={styles.label}>หัวข้อ: {report.topic}</Text>
+					<Text style={styles.label}>เนื้อหา: </Text>
+					<View style={styles.inputContainer}>
+						<Text style={styles.details}>{report.details}</Text>
 					</View>
+					<Text style={styles.label}>ที่เกิดเหตุ: </Text>
+					<MapView style={styles.map} region={region}>
+						{report.location && <Marker coordinate={report.location} />}
+					</MapView>
+					<Text style={styles.label}>รูป:</Text>
+					<View style={styles.imageContainer}>
+						{image && <Image source={{ uri: image }} style={styles.image} />}
+					</View>
+					<Text style={styles.date}>โดย: {report.username}</Text>
 				</View>
-
-				<Text style={styles.label}>หน่วยงาน:</Text>
-				<PagerView
-					style={styles.pagerView}
-					initialPage={departmentIndex}
-					onPageSelected={handlePageSelected}
-				>
-					{departments.map((dept, index) => (
-						<View key={index} style={styles.page}>
-							<Icon name={dept.icon} size={80} color="#fff" />
-							<Text style={styles.departmentName}>{dept.name}</Text>
-						</View>
-					))}
-				</PagerView>
-
-				{/* <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-				<Text style={styles.submitButtonText}>Submit</Text>
-			</TouchableOpacity> */}
-				<Button title="Update" onPress={handleUpdate} />
-				<Button title="Delete" color="red" onPress={handleDelete} />
 			</View>
+
+			{/* ------------------------------ Section 2: Update Section --------------------------- */}
+			{
+				EditableStatus.map((item, index) => (
+					<View key={item}>
+						<MaterialIcons name="arrow-downward" size={40} color="#fff" style={styles.arrowIcon} />
+						<View style={styles.outerCardContainer}>
+							<View style={index === 0 ? styles.headerCardAck : index === 1 ? styles.headerCardProcessing : styles.headerCardDone}>
+								<Text style={styles.statusLabel}>สถานะ: {item}</Text>
+								<Text style={styles.statusdate}>{createdAt[index]}</Text>
+							</View>
+							<View style={styles.innerCardContainer}>
+								<Text style={styles.label}>ข้อความ:</Text>
+								<View style={styles.inputContainer}>
+									<TextInput
+										style={styles.input}
+										placeholder="Enter comment"
+										placeholderTextColor="#999"
+										value={comment[index]}
+										onChangeText={(text) => updateComment(index, text)}
+										editable={false}
+									/>
+								</View>
+								<Text style={styles.label}>รูป: </Text>
+								<View style={styles.imageContainer}>
+									{imageUrl[index] && <Image source={{ uri: imageUrl[index] }} style={styles.image} />}
+								</View>
+								<Text style={styles.date}>โดย: {updater[index]} / {updater_role[index]}</Text>
+							</View>
+						</View>
+					</View>
+				))
+			}
 		</ScrollView>
 	);
-};
-
+}

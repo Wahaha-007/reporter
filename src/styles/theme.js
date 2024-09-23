@@ -96,6 +96,12 @@ export const styles = StyleSheet.create({
 	card: {
 		backgroundColor: '#1c1c1e',
 		borderRadius: 10,
+		marginBottom: 10,
+		borderColor: 'white', // Only the bottom border color
+		borderWidth: 1, // Only the bottom border width
+		paddingHorizontal: 10,
+		paddingTop: 10,
+
 	},
 	topic: {
 		fontSize: 20,
@@ -150,8 +156,28 @@ export const styles = StyleSheet.create({
 		color: '#444',
 		textAlign: 'center',
 	},
+	// ============ For Status Edit Page ===============
+	blueButton: {
+		flex: 1,
+		marginHorizontal: 5, // Space between buttons
+		paddingTop: 5, // แก้ปัญหาเรื่องสระบน
+		marginBottom: 5, // ชดเชย padding ด้านบน
+		backgroundColor: '#007bff', // Dark gray background for buttons
+		borderRadius: 5,
+		alignItems: 'center', // Center text horizontally
+		justifyContent: 'center', // Center text vertically
+	},
+	redButton: {
+		flex: 1,
+		marginHorizontal: 5, // Space between buttons
+		paddingTop: 5, // แก้ปัญหาเรื่องสระบน
+		marginBottom: 5, // ชดเชย padding ด้านบน
+		backgroundColor: 'red', // Dark gray background for buttons
+		borderRadius: 5,
+		alignItems: 'center', // Center text horizontally
+		justifyContent: 'center', // Center text vertically
+	},
 	// ==================== For Task Page ==================
-
 	filterContainer: {
 		flexDirection: 'row',
 		justifyContent: 'space-around',
@@ -183,6 +209,22 @@ export const styles = StyleSheet.create({
 		borderRightWidth: 1, // Only the bottom border width
 		paddingHorizontal: 10,
 		paddingTop: 10,
+	},
+	taskCard: {
+		flexDirection: 'row', // Aligns children in a row
+		justifyContent: 'space-between', // Space between content and icon
+		alignItems: 'center', // Centers items vertically
+		padding: 10,
+		backgroundColor: '#333', // Adjust to your background color
+		borderRadius: 8,
+		marginBottom: 10,
+	},
+	taskContent: {
+		flex: 1, // Takes up available space
+	},
+	taskIcon: {
+		width: 40, // Fixed width
+		height: 40, // Fixed height (optional, for centering)
 	},
 
 	// ==================== For Task Details Page ==================

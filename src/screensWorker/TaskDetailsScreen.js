@@ -17,7 +17,7 @@ export default function TaskDetailsScreen({ route }) {
 	const { globalParams, setGlobalParams } = useGlobalContext();
 	const { user } = globalParams;
 
-	const { item } = route.params;	// Data for Step 1
+	const { item } = route.params;
 	const report = item;
 	const navigation = useNavigation();
 	const [image, setImage] = useState('');
@@ -82,8 +82,6 @@ export default function TaskDetailsScreen({ route }) {
 		}
 	};
 
-	// ---------------- 2. GUI related code --------------------//
-
 	const updateComment = (index, value) => {
 		setComment((prev) => {
 			const newComment = [...prev];
@@ -124,6 +122,8 @@ export default function TaskDetailsScreen({ route }) {
 		});
 	};
 
+	// ---------------- 2. GUI related code --------------------//
+
 	const pickImage = async (index) => {
 		let result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -147,6 +147,24 @@ export default function TaskDetailsScreen({ route }) {
 		if (!result.canceled) {
 			updateImageUrl(index, result.assets[0].uri);
 		}
+	};
+
+	const formatDateString = (dateString) => {
+		const date = new Date(dateString);
+		const options = {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			weekday: 'long',
+			hour: 'numeric',
+			minute: 'numeric',
+			second: 'numeric',
+			hour12: false, // Set to true for 12-hour format
+		};
+		const formattedDate = date.toLocaleString('en-GB', options);
+		const [datePart, timePart] = formattedDate.split(', ');
+		// return `${datePart} ${timePart}`;
+		return formattedDate;
 	};
 
 	// ---------------- 3. DB related code --------------------//
@@ -177,7 +195,10 @@ export default function TaskDetailsScreen({ route }) {
 			<View style={styles.outerCardContainer}>
 				<View style={styles.headerCardReport}>
 					<Text style={styles.statusLabel}>สถานะ: รายงาน</Text>
-					<Text style={styles.statusdate}>{report.updatedAt ? report.updatedAt : report.createdAt}</Text>
+					<Text style={styles.statusdate}>{
+						report.updatedAt ?
+							formatDateString(report.updatedAt) : formatDateString(report.createdAt)}
+					</Text>
 				</View>
 				<View style={styles.innerCardContainer}>
 					<Text style={styles.label}>หัวข้อ: {report.topic}</Text>
@@ -225,9 +246,11 @@ export default function TaskDetailsScreen({ route }) {
 									{report.status === allStatus[index] && ( // ถ้าจบอันก่อนอยู่เท่านั้น ถึงจะให้ Upload ตรงนี้ได้
 										<View style={styles.buttonContainer}>
 											<TouchableOpacity style={styles.filterButton} onPress={() => takePhoto(index)}>
+												<MaterialIcons name={'camera'} size={24} color={'white'} />
 												<Text style={styles.details}>กล้อง</Text>
 											</TouchableOpacity>
 											<TouchableOpacity style={styles.filterButton} onPress={() => pickImage(index)}>
+												<MaterialIcons name={'folder'} size={24} color={'white'} />
 												<Text style={styles.details}>แฟ้มภาพ</Text>
 											</TouchableOpacity>
 										</View>)}
@@ -236,7 +259,7 @@ export default function TaskDetailsScreen({ route }) {
 									<TouchableOpacity
 										style={styles.submitButton}
 										onPress={() => handleSubmitUpdate(item, dataTable[item], comment[index], imageUrl[index])}>
-										<Text style={styles.submitButtonText}>ส่ง</Text>
+										<Text style={styles.submitButtonText}>ส่งความคืบหน้า</Text>
 									</TouchableOpacity>
 								)}
 								<Text style={styles.date}>โดย: {updater[index]} / {updater_role[index]}</Text>

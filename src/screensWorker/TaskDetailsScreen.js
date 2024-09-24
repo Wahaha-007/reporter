@@ -169,6 +169,11 @@ export default function TaskDetailsScreen({ route }) {
 
 	const getDifferenceInDaysAndHours = (dateString1, dateString2) => {
 		// Convert date strings to Date objects
+		if (dateString2 === 'now') {
+			const createdAt = new Date().toISOString();
+			dateString2 = createdAt;
+		}
+
 		const date1 = new Date(dateString1);
 		const date2 = new Date(dateString2);
 
@@ -249,7 +254,8 @@ export default function TaskDetailsScreen({ route }) {
 						<MaterialIcons name="arrow-downward" size={40} color="#fff" style={styles.arrowIcon} />
 						<Text style={styles.durationText}>
 							{index == 0 ? getDifferenceInDaysAndHours(report.createdAt, createdAt[index]) :
-								getDifferenceInDaysAndHours(createdAt[index - 1], createdAt[index])}
+								report.status === allStatus[index] ? getDifferenceInDaysAndHours(createdAt[index - 1], 'now') : // เป็น card Editable ตามนิยามข้างล่าง
+									getDifferenceInDaysAndHours(createdAt[index - 1], createdAt[index])}
 						</Text>
 						<View style={styles.outerCardContainer}>
 							<View style={index === 0 ? styles.headerCardAck : index === 1 ? styles.headerCardProcessing : styles.headerCardDone}>

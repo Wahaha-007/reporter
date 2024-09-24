@@ -68,6 +68,7 @@ export default function StatusDetailsScreen({ route }) {
 			}
 		}
 	}, [isFocused]);
+
 	// ---------------- 1. Database related code --------------------//
 
 	const fetchUpdateReport = async (index, statusName) => {
@@ -80,8 +81,6 @@ export default function StatusDetailsScreen({ route }) {
 			updateUpdater_role(index, data.updater_role);
 		}
 	};
-
-	// ---------------- 2. GUI related code --------------------//
 
 	const updateComment = (index, value) => {
 		setComment((prev) => {
@@ -123,13 +122,53 @@ export default function StatusDetailsScreen({ route }) {
 		});
 	};
 
+	// ---------------- 2. GUI related code --------------------//
+
+	const formatDateString = (dateString) => {
+		const date = new Date(dateString);
+		const options = {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			weekday: 'long',
+			hour: 'numeric',
+			minute: 'numeric',
+			second: 'numeric',
+			hour12: false, // Set to true for 12-hour format
+		};
+		const formattedDate = date.toLocaleString('en-GB', options);
+		const [datePart, timePart] = formattedDate.split(', ');
+		// return `${datePart} ${timePart}`;
+		return formattedDate;
+	};
+
+	const getDifferenceInDaysAndHours = (dateString1, dateString2) => {
+		// Convert date strings to Date objects
+		const date1 = new Date(dateString1);
+		const date2 = new Date(dateString2);
+
+		// Get the difference in milliseconds
+		const diffInMs = Math.abs(date2 - date1);
+
+		// Convert the difference from milliseconds to days and hours
+		const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)); // Convert ms to days
+		const remainingMs = diffInMs % (1000 * 60 * 60 * 24); // Remainder after extracting days
+		const diffInHours = Math.floor(remainingMs / (1000 * 60 * 60)); // Convert remainder to hours
+
+		// Return the result in the format 'xx days, yy hours'
+		return `${diffInDays} days, ${diffInHours} hours`;
+	};
+
 	return (
 		<ScrollView style={styles.container}>
 			{/* --------------  Section 1: Display current report data ---------- */}
 			<View style={styles.outerCardContainer}>
 				<View style={styles.headerCardReport}>
 					<Text style={styles.statusLabel}>สถานะ: รายงาน</Text>
-					<Text style={styles.statusdate}>{report.updatedAt ? report.updatedAt : report.createdAt}</Text>
+					<Text style={styles.statusdate}>{
+						report.updatedAt ?
+							formatDateString(report.updatedAt) : formatDateString(report.createdAt)}
+					</Text>
 				</View>
 				<View style={styles.innerCardContainer}>
 					<Text style={styles.label}>หัวข้อ: {report.topic}</Text>
@@ -154,10 +193,14 @@ export default function StatusDetailsScreen({ route }) {
 				EditableStatus.map((item, index) => (
 					<View key={item}>
 						<MaterialIcons name="arrow-downward" size={40} color="#fff" style={styles.arrowIcon} />
+						<Text style={styles.durationText}>
+							{index == 0 ? getDifferenceInDaysAndHours(report.createdAt, createdAt[index]) :
+								getDifferenceInDaysAndHours(createdAt[index - 1], createdAt[index])}
+						</Text>
 						<View style={styles.outerCardContainer}>
 							<View style={index === 0 ? styles.headerCardAck : index === 1 ? styles.headerCardProcessing : styles.headerCardDone}>
 								<Text style={styles.statusLabel}>สถานะ: {item}</Text>
-								<Text style={styles.statusdate}>{createdAt[index]}</Text>
+								<Text style={styles.statusdate}>{createdAt[index] ? formatDateString(createdAt[index]) : ''}</Text>
 							</View>
 							<View style={styles.innerCardContainer}>
 								<Text style={styles.label}>ข้อความ:</Text>

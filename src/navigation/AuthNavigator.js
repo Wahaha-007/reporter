@@ -111,7 +111,7 @@ export default function AppNavigator() {
 				<NavigationContainer>
 					<AuthStack.Navigator>
 						<AuthStack.Screen name="Load" component={LoadScreen} options={{ headerShown: false }} />
-						<AuthStack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: true, title: "เข้าระบบ" }} />
+						<AuthStack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: true, title: "เข้าสู่ระบบ" }} />
 						<AuthStack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: true, title: "ลงทะเบียน" }} />
 						<AuthStack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: false }} />
 					</AuthStack.Navigator>

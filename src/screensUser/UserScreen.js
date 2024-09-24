@@ -34,9 +34,9 @@ const UserScreen = ({ navigation }) => {
 	return (
 		<View style={styles.container}>
 			<View style={styles.innerContainer}>
-				<Text style={styles.label}>User: {email}</Text>
-				<Text style={styles.label}>Role: {role}</Text>
-				<Button title="Log Out" onPress={handleLogout} />
+				<Text style={styles.label}>ชื่อบัญชี: {email}</Text>
+				<Text style={styles.label}>ตำแหน่ง: {role}</Text>
+				<Button title="ออกจากระบบ" onPress={handleLogout} />
 			</View>
 		</View>
 	);

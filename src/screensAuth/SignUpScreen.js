@@ -52,7 +52,7 @@ const SignUpScreen = ({ navigation }) => {
 					// Sign-up state
 					<>
 						<Text style={{ color: colors.text, fontSize: 24, marginBottom: 16, textAlign: 'center' }}>
-							Create New User
+							ลงทะเบียนผู้ใช้ใหม่
 						</Text>
 
 						<TextInput
@@ -74,17 +74,17 @@ const SignUpScreen = ({ navigation }) => {
 
 						<Button mode="contained" buttonColor="#555555" onPress={handleSignUp}>
 							{/*buttonColor="rgb(169, 169, 169)" // Dark grey in RGB*/}
-							Create
+							ยืนยัน
 						</Button>
 						<Button mode="contained" onPress={() => navigation.navigate('SignIn')} style={{ marginTop: 8 }}>
-							Back to Sign In
+							กลับสู่หน้าเข้าสู่ระบบ
 						</Button>
 					</>
 				) : (
 					// Verification state
 					<>
 						<Text style={{ color: colors.text, fontSize: 24, marginBottom: 16, textAlign: 'center' }}>
-							Enter Verification Code
+							กรอก Verification Code ท่ได้รับทาง E-mail
 						</Text>
 						<TextInput
 							placeholder="Verification Code"
@@ -99,7 +99,7 @@ const SignUpScreen = ({ navigation }) => {
 							theme={{ colors: { text: colors.text, primary: colors.primary } }} // Apply theme to TextInput
 						/>
 						<Button mode="contained" onPress={handleConfirmSignUp}>
-							Confirm Sign Up
+							ยืนยัน
 						</Button>
 					</>
 				)}

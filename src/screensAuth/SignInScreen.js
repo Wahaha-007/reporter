@@ -36,7 +36,7 @@ const SignInScreen = ({ navigation }) => {
 		>
 			<View style={authstyles.card}>
 				<Text style={{ color: colors.text, fontSize: 24, marginBottom: 16, textAlign: 'center' }}>
-					Sign In
+					เข้าสู่ระบบ
 				</Text>
 
 				<TextInput
@@ -58,11 +58,11 @@ const SignInScreen = ({ navigation }) => {
 
 				<Button mode="contained" buttonColor="#555555" onPress={handleSignIn}>
 					{/*buttonColor="rgb(169, 169, 169)" // Dark grey in RGB*/}
-					Sign In
+					ยืนยัน
 				</Button>
 
 				<Button mode="contained" onPress={() => navigation.navigate('SignUp')} style={{ marginTop: 8 }}>
-					Create a new user
+					ลงทะเบียนผู้ใช้ใหม่
 				</Button>
 			</View>
 		</KeyboardAvoidingView>

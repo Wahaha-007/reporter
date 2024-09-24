@@ -245,7 +245,7 @@ export const styles = StyleSheet.create({
 	headerCardReport: {
 		paddingTop: 5, //ชดเชยสระบน
 		alignItems: 'center',
-		backgroundColor: '#57a1b5',
+		backgroundColor: '#6b141c',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
 
@@ -268,7 +268,7 @@ export const styles = StyleSheet.create({
 		alignItems: 'center',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
-		backgroundColor: '#ba6c3c',
+		backgroundColor: '#cf7d2b',
 
 		flexDirection: 'row', // Aligns children in a row
 		justifyContent: 'space-between', // Space between content and icon
@@ -279,7 +279,7 @@ export const styles = StyleSheet.create({
 		alignItems: 'center',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
-		backgroundColor: '#9c41ba',
+		backgroundColor: '#8c9423',
 
 		flexDirection: 'row', // Aligns children in a row
 		justifyContent: 'space-between', // Space between content and icon

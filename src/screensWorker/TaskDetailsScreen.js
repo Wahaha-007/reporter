@@ -10,7 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { styles } from '../styles/theme';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { generatePresignedUrl, createUpdateReport, getUpdateReport } from '../services/awsDatabase';
-import { MaterialIcons } from '@expo/vector-icons'; // For arrow icon
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function TaskDetailsScreen({ route }) {
 	const isFocused = useIsFocused(); // Global Data
@@ -223,11 +223,14 @@ export default function TaskDetailsScreen({ route }) {
 			{/* --------------  Section 1: Display current report data ---------- */}
 			<View style={styles.outerCardContainer}>
 				<View style={styles.headerCardReport}>
-					<Text style={styles.statusLabel}>สถานะ: รายงาน</Text>
-					<Text style={styles.statusdate}>{
-						report.updatedAt ?
-							formatDateString(report.updatedAt) : formatDateString(report.createdAt)}
-					</Text>
+					<View style={styles.headerContent}>
+						<Text style={styles.statusLabel}>สถานะ: รายงาน</Text>
+						<Text style={styles.statusdate}>{
+							report.updatedAt ?
+								formatDateString(report.updatedAt) : formatDateString(report.createdAt)}
+						</Text>
+					</View>
+					<MaterialIcons name={'filter-1'} size={40} color={'white'} style={styles.headerIcon} />
 				</View>
 				<View style={styles.innerCardContainer}>
 					<Text style={styles.label}>หัวข้อ: {report.topic}</Text>
@@ -259,8 +262,12 @@ export default function TaskDetailsScreen({ route }) {
 						</Text>
 						<View style={styles.outerCardContainer}>
 							<View style={index === 0 ? styles.headerCardAck : index === 1 ? styles.headerCardProcessing : styles.headerCardDone}>
-								<Text style={styles.statusLabel}>สถานะ: {item}</Text>
-								<Text style={styles.statusdate}>{createdAt[index] ? formatDateString(createdAt[index]) : ''}</Text>
+								<View style={styles.headerContent}>
+									<Text style={styles.statusLabel}>สถานะ: {item}</Text>
+									<Text style={styles.statusdate}>{createdAt[index] ? formatDateString(createdAt[index]) : ''}</Text>
+								</View>
+								<MaterialIcons size={40} color={'white'} style={styles.headerIcon}
+									name={index === 0 ? 'filter-2' : index === 1 ? 'filter-3' : 'filter-4'} />
 							</View>
 							<View style={styles.innerCardContainer}>
 								<Text style={styles.label}>ข้อความ:</Text>

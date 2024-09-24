@@ -248,13 +248,31 @@ export const styles = StyleSheet.create({
 		backgroundColor: '#57a1b5',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
+
+		flexDirection: 'row', // Aligns children in a row
+		justifyContent: 'space-between', // Space between content and icon
+		alignItems: 'center', // Centers items vertically
 	},
+	headerContent: {
+		flex: 1, // Takes up available space
+		alignItems: 'center',
+	},
+	headerIcon: {
+		width: 40, // Fixed width
+		height: 40, // Fixed height (optional, for centering)
+		marginRight: 10,
+	},
+
 	headerCardAck: {
 		paddingTop: 5, //ชดเชยสระบน
 		alignItems: 'center',
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
 		backgroundColor: '#ba6c3c',
+
+		flexDirection: 'row', // Aligns children in a row
+		justifyContent: 'space-between', // Space between content and icon
+		alignItems: 'center', // Centers items vertically
 	},
 	headerCardProcessing: {
 		paddingTop: 5, //ชดเชยสระบน
@@ -262,6 +280,10 @@ export const styles = StyleSheet.create({
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
 		backgroundColor: '#9c41ba',
+
+		flexDirection: 'row', // Aligns children in a row
+		justifyContent: 'space-between', // Space between content and icon
+		alignItems: 'center', // Centers items vertically
 	},
 	headerCardDone: {
 		paddingTop: 5, //ชดเชยสระบน
@@ -269,6 +291,10 @@ export const styles = StyleSheet.create({
 		borderTopRightRadius: 9,
 		borderTopLeftRadius: 9,
 		backgroundColor: '#398029',
+
+		flexDirection: 'row', // Aligns children in a row
+		justifyContent: 'space-between', // Space between content and icon
+		alignItems: 'center', // Centers items vertically
 	},
 	innerCardContainer: {
 		flex: 1,
@@ -288,7 +314,6 @@ export const styles = StyleSheet.create({
 		marginBottom: 10,
 	},
 });
-
 
 export const authstyles = StyleSheet.create({
 	container: {

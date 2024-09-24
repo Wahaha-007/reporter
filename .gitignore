@@ -38,6 +38,8 @@ yarn-error.*
 
 # Additional
 Note.txt
+eas.json
+app.json
 
 #amplify-do-not-edit-begin
 amplify/\#current-cloud-backend
@@ -60,3 +62,7 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 #amplify-do-not-edit-end
+
+/android
+/ios
+/.idea

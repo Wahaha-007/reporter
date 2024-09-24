@@ -10,6 +10,7 @@ import { styles } from '../styles/theme';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { generatePresignedUrl, createUpdateReport, getUpdateReport } from '../services/awsDatabase';
 import { MaterialIcons } from '@expo/vector-icons'; // For arrow icon
+import { PROVIDER_GOOGLE } from 'react-native-maps';
 
 export default function StatusDetailsScreen({ route }) {
 	const isFocused = useIsFocused(); // Global Data
@@ -180,7 +181,7 @@ export default function StatusDetailsScreen({ route }) {
 						<Text style={styles.details}>{report.details}</Text>
 					</View>
 					<Text style={styles.label}>ที่เกิดเหตุ: </Text>
-					<MapView style={styles.map} region={region}>
+					<MapView provider={PROVIDER_GOOGLE} style={styles.map} region={region}>
 						{report.location && <Marker coordinate={report.location} />}
 					</MapView>
 					<Text style={styles.label}>รูป:</Text>

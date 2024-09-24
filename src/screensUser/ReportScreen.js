@@ -13,6 +13,7 @@ import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'; // Import MaterialIcons
 import PagerView from 'react-native-pager-view';
+import { PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { createReport } from '../services/awsDatabase';
 
@@ -187,6 +188,7 @@ export default function ReportScreen() {
 
 				<Text style={styles.label}>ที่เกิดเหตุ:</Text>
 				<MapView
+					provider={PROVIDER_GOOGLE} // This ensures Google Maps is used
 					style={styles.map}
 					region={region}
 					onPress={(e) => setLocation(e.nativeEvent.coordinate)}

@@ -132,34 +132,3 @@ export default function StatusScreen() {
 		</View>
 	);
 };
-
-// 2.3 ส่วน GUI Render
-// Display : Topic, Details, Submittted on,
-// 	return (
-// 		<>
-// 			{reports.length === 0 ? (
-// 				<View style={styles.noDataContainer}>
-// 					<Text style={styles.noDataText}>- No data -</Text>
-// 				</View>
-// 			) : (
-// 				<ScrollView style={styles.container}>
-// 					{reports.map((report) => (
-// 						<Card key={report.report_id} containerStyle={styles.card}>
-// 							<View style={styles.statusSection}>
-// 								{renderStatus(report.status)}
-// 							</View>
-// 							<Text style={styles.topic}>{report.topic}</Text>
-// 							<Text
-// 								onPress={() => toMoreDetails(report)}
-// 								style={styles.details}
-// 							>
-// 								Details: {shortenString(report.details)}
-// 							</Text>
-// 							<Text style={styles.date}>{formatDateString(report.createdAt)}</Text>
-// 						</Card>
-// 					))}
-// 				</ScrollView>
-// 			)}
-// 		</>
-// 	);
-// };

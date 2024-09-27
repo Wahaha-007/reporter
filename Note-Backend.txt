@@ -1,0 +1,96 @@
+Date : 25 Sep 24
+----------------
+
+I am designing backend for Mobile App.
+The mobile apps is written in ReactNative. 
+It gets the problem reports from users and write into DynamoDB with the following data model.
+
+Table : 'Report'
+----------------
+report_id (Partition key) String
+department String ( Possible values : HR/Facility/Production/Finance/Maintenance )
+details String
+imageUrl String
+location Map
+status String (There are 4 possible statuses : Report/Ack/Processing/Done
+topic String
+username String (in Email format)
+createdAt String
+
+Since there are 4 different statuses, there are also other 3 tables for each status. 
+They have the common attribute : report_id.
+
+Table : 'ReportAck', 'ReportProcessing', 'ReportDone'
+-----------------------------------------------------
+report_id (Partition key) String
+comment String
+CratedAt String
+imageUrl String
+updater String
+updater_role String
+
+There are the updaters from each department who will update the status of each report_id in respective table.
+updater_role : HR-Worker, Facility-Worker, Production-Worker, Finance-Worker, Maintenance-Worker.
+
+For the Admin web design, we need to make a simple dashboard with JS and the backend with NodeJS.
+It should display
+1. Pending isssues for each department
+2. Duration between status transfer like from 'Report' -> 'Ack', from 'Ack' -> 'Processing'
+   This data can display the responsiveness of each department to solve to problem.
+
+Let's make the plan for making Admin web.
+
+================================================================================
+
+
+25 Sep 24
+---------
+
+Next, let's make the first dashboard with the following data.
+1. User can see it when visit http://localhost:3000/dashboard/remaining
+   This should be a html file with some code inside
+
+2. This page has upper half and lower half
+   Upper half : Displays a graph using ChartJS. It is a stacked bar chart
+   - X-Axis is department
+   - Y-Axis is number of report at each stage
+
+   Lower half : When the user click at some area of the chart for example click at 'Ack' of the 'HR' department
+                This lower half section will show the data in table format of details according to 'Ack' status report of 'HR' department.
+
+   In order to do this, we also need to add more route for api backend to get the appropriated data from database. 
+
+
+----------------------------------
+
+There are many points we need to discuss, just discuss, no coding.
+1. When we count the report.
+   Can we make the GSI for the table 'Report' column 'status' and count from there ?
+   For example, for 'HR' department, if there are 3 records in table 'ReportDone' and there are 6 records in table 'ReportProcessing'.
+   It means that only 3 records are really 'processing' (because other 3 already in 'Done')
+   Counting record from all table will not give the correct result to display to the stacked chart.
+
+2. Table 'Report' is the main table that have 'report_id' for each status. We can use the this list to make table when user click the graph area.
+
+
+What do you think ?
+
+
+=========================================================================
+
+Let' make another dashboard. We will discuss first and make the coding later.
+This time we want the dashboard to show "Time to change report status". A single report has 4 statuses so it should have 3 'Status changes' in between.
+What types of graph or representations are suitable to display Status tus change' time to compare the performance between department ?
+
+-------------------------------------
+
+Well, there are 3 types I think we should try first : Box Plot, Heatmap, Radar.
+
+--------------------------------------
+
+Let's use Javascript, plotly / Chart.JS
+
+
+
+
+

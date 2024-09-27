@@ -258,7 +258,7 @@ export const updateReport = async (report_id, updatedData) => {
 		const updateParams = {
 			TableName: 'Reports',
 			Key: { report_id },
-			UpdateExpression: `SET #topic = :topic, details = :details, department = :department, #location = :location, imageUrl = :imageUrl, createdAt = :createdAt`,
+			UpdateExpression: `SET #topic = :topic, details = :details, department = :department, #location = :location, imageUrl = :imageUrl, updateddAt = :updatedAt`,
 			ExpressionAttributeNames: { // เอาไว้ใส่นิยามเพื่อหลบ reserved word collision
 				'#topic': 'topic',
 				'#location': 'location',

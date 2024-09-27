@@ -257,9 +257,10 @@ export default function TaskDetailsScreen({ route }) {
 					<View key={item}>
 						<MaterialIcons name="arrow-downward" size={40} color="#fff" style={styles.arrowIcon} />
 						<Text style={styles.durationText}>
-							{index == 0 ? getDifferenceInDaysAndHours(report.createdAt, createdAt[index]) :
-								report.status === allStatus[index] ? getDifferenceInDaysAndHours(createdAt[index - 1], 'now') : // เป็น card Editable ตามนิยามข้างล่าง
-									getDifferenceInDaysAndHours(createdAt[index - 1], createdAt[index])}
+							{(index == 0) && (report.status === allStatus[index]) ? getDifferenceInDaysAndHours(report.createdAt, 'now') :
+								index == 0 ? getDifferenceInDaysAndHours(report.createdAt, createdAt[index]) :
+									report.status === allStatus[index] ? getDifferenceInDaysAndHours(createdAt[index - 1], 'now') : // เป็น card Editable ตามนิยามข้างล่าง
+										getDifferenceInDaysAndHours(createdAt[index - 1], createdAt[index])}
 						</Text>
 						<View style={styles.outerCardContainer}>
 							<View style={index === 0 ? styles.headerCardAck : index === 1 ? styles.headerCardProcessing : styles.headerCardDone}>

@@ -1,5 +1,5 @@
 I am designing are problem report system on Mobile Apps using ReactNative (with Expo).
-Currently we record data into DynamoDB with the following schema
+Currently we record data into DynamoDB with the following 'data model'
 
 report_id (Partition key) String
 department String
@@ -9,7 +9,7 @@ location Map
 status String (There are 4 possible statuses : Report/Ack/Solving/Done
 topic String
 username String (in Email format)
-reportDate String
+createdAt String
 
 This is OK. for user to record the problem into the database.
 But we also need to responsible person from each department to log into the system.
@@ -129,6 +129,62 @@ return (
 My question is : If in SignInScreen, user successfully signed-in and we know his 'name' and his 'role'. 
 We wanto to display the Tab screen 'ReportTypeA', 'ReportTypeB', 'ReportTypeB' only 1 not all 3 screens based on his 'role'.
 How can we do this ?
+
+
+
+--------------------
+
+26 Sep 24
+Update Unified table structure :
+
+
+{
+  "report_id": "report_12345",
+  "department": "Dept A",
+  "details": "Issue with system performance",
+  "location": {
+    "latitude": "34.0522",
+    "longitude": "-118.2437"
+  },
+  "status": "Done",
+  "topic": "System Issue",
+  "username": "user@example.com",
+  "createdAt": "2024-09-20T08:00:00Z",
+  "acknowledgedAt": "2024-09-20T09:00:00Z",
+  "processingStartedAt": "2024-09-20T12:00:00Z",
+  "doneAt": "2024-09-20T16:00:00Z",
+  "imageUrl": "report_image_url",
+  "comments": [
+    {
+      "status": "Ack",
+      "comment": "Report acknowledged by admin",
+      "imageUrl": "ack_image_url",
+      "updater": "admin@example.com",
+      "updater_role": "admin",
+      "createdAt": "2024-09-20T09:00:00Z"
+    },
+    {
+      "status": "Processing",
+      "comment": "Processing started by tech staff",
+      "imageUrl": "processing_image_url",
+      "updater": "staff@example.com",
+      "updater_role": "technician",
+      "createdAt": "2024-09-20T12:00:00Z"
+    },
+    {
+      "status": "Done",
+      "comment": "Issue resolved, marked as complete",
+      "imageUrl": "done_image_url",
+      "updater": "supervisor@example.com",
+      "updater_role": "supervisor",
+      "createdAt": "2024-09-20T16:00:00Z"
+    }
+  ]
+}
+
+
+---------------------------------------------------------------------
+
 
 
 
